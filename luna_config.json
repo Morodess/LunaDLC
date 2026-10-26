@@ -1,0 +1,18 @@
+{
+  "ram_gb": 4,
+  "resolution": "1920x1080",
+  "close_after_launch": false,
+  "nickname": "",
+  "java_path": "",
+  "jvm_args": "",
+  "active_account": "",
+  "auth_username": "",
+  "auth_password": "",
+  "auth_uid": 0,
+  "auth_role": "User",
+  "auth_sub": "",
+  "auth_sub_expiry": "",
+  "remember_me": true,
+  "site_url": "http://localhost:3000",
+  "accounts": []
+}

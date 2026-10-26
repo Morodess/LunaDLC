@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LunaClient — Архитектура доминирования</title>
-    <meta name="description" content="LunaClient — Приватный клиент нового поколения для Minecraft 1.21.8. Нейросетевая точность, FastMath 240+ FPS и бескомпромиссный контроль.">
+    <title>LunaClient — Приватный клиент Minecraft 1.21.8</title>
+    <meta name="description" content="LunaClient — Приватный клиент нового поколения для Minecraft 1.21.8. Высокий FPS, чистый визуал, гибкий HUD и облачные конфиги.">
     <meta name="theme-color" content="#070707">
     <!-- OpenGraph / Social Embeds for Discord, Telegram, VK, Twitter -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="LunaClient">
-    <meta property="og:title" content="LunaClient — Архитектура доминирования">
-    <meta property="og:description" content="Приватный клиент нового поколения для Minecraft 1.21.8. Нейросетевой анализ, FastMath 240+ FPS, мгновенный отклик и абсолютный контроль.">
+    <meta property="og:title" content="LunaClient — Приватный клиент Minecraft 1.21.8">
+    <meta property="og:description" content="Современный приватный клиент для комфортной игры и PvP. Плавные анимации, точный HUD, облачные конфиги и высокий FPS.">
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="LunaClient — Архитектура доминирования">
-    <meta property="twitter:description" content="Приватный клиент нового поколения для Minecraft 1.21.8. Нейросетевой анализ, FastMath 240+ FPS, мгновенный отклик и абсолютный контроль.">
+    <meta property="twitter:title" content="LunaClient — Приватный клиент Minecraft 1.21.8">
+    <meta property="twitter:description" content="Современный приватный клиент для комфортной игры и PvP. Плавные анимации, точный HUD, облачные конфиги и высокий FPS.">
     <!-- SVG Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000'/><text x='50' y='68' font-family='sans-serif' font-size='56' font-weight='900' fill='%23fff' text-anchor='middle'>L</text></svg>">
     <!-- Tailwind CSS CDN with dark mode configured via class -->
@@ -203,27 +203,27 @@
                     </div>
 
                     <h1 class="text-4xl sm:text-7xl font-black tracking-tight leading-[1.08] text-noirText uppercase">
-                        Интеллект.<br>
-                        Абсолютный контроль.
+                        Точность.<br>
+                        Полный контроль.
                     </h1>
 
                     <p class="text-base sm:text-xl text-noirTextMuted max-w-2xl font-normal leading-relaxed">
-                        Автономная архитектура нового поколения. Нейросетевой анализ игровых пакетов, идеальная читаемость в PvP и бескомпромиссная скорость отклика на любом игровом сервере.
+                        Приватный клиент для комфортной игры и PvP на серверах Minecraft 1.21. Плавный визуал, высокая частота кадров, кастомный HUD и синхронизация веб-конфигов.
                     </p>
                 </div>
             </section>
 
-            <!-- ARCHITECTURE / FEATURES SECTION (1-TO-1 SCREENSHOT REPRODUCTION) -->
+            <!-- ARCHITECTURE / FEATURES SECTION -->
             <section id="features-section" class="max-w-7xl mx-auto px-4 sm:px-8 py-20 w-full">
                 
-                <!-- Section Header Matching Screenshot -->
+                <!-- Section Header -->
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
                     <div class="space-y-3">
                         <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-noirText">
-                            Архитектура доминирования
+                            Возможности клиента
                         </h2>
                         <p class="text-sm sm:text-base text-noirTextMuted max-w-2xl font-normal leading-relaxed">
-                            Тщательно подобранный набор улучшений: повышенная стабильность, отзывчивость и максимально плавный игровой процесс.
+                            Продуманный визуал, удобный внутриигровой GUI и гибкая настройка под любой сервер.
                         </p>
                     </div>
 
@@ -253,9 +253,11 @@
                                         <span class="text-xs font-semibold tracking-wide">Interface</span>
                                     </div>
                                     <div class="flex items-center space-x-2 text-noirTextMuted text-xs">
-                                        <span class="border border-noirBorder px-1.5 py-0.5 rounded text-[10px] font-mono">R</span>
-                                        <i data-lucide="star" class="w-3.5 h-3.5"></i>
-                                        <div class="w-2.5 h-2.5 rounded-full bg-black dark:bg-white"></div>
+                                        <button type="button" onclick="cycleCardKeybind(this)" class="border border-noirBorder hover:border-noirBorderStrong px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition select-none active:scale-95" title="Кликните для смены бинда">R</button>
+                                        <button type="button" onclick="toggleCardStar(this)" class="hover:scale-110 transition cursor-pointer text-noirTextMuted p-0.5" title="В избранное">
+                                            <i data-lucide="star" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button type="button" onclick="cycleCardDot(this)" class="w-2.5 h-2.5 rounded-full bg-emerald-400 hover:opacity-80 transition cursor-pointer shadow-sm" title="Статус модуля (кликните)"></button>
                                     </div>
                                 </div>
                                 <!-- Interface Options -->
@@ -266,17 +268,20 @@
                                                 <i data-lucide="layout" class="w-3.5 h-3.5 text-noirTextMuted"></i>
                                                 <span class="font-medium">Режим отображения</span>
                                             </div>
-                                            <span class="text-[10px] bg-neutral-200 dark:bg-neutral-800 text-noirText px-2 py-0.5 rounded font-mono">Modern</span>
+                                            <button id="gui-mode-btn" type="button" onclick="cycleGuiMode()" class="text-[10px] bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-noirText px-2 py-0.5 rounded font-mono transition cursor-pointer flex items-center space-x-1 active:scale-95" title="Кликните для переключения темы интерфейса">
+                                                <span id="gui-mode-text">Modern</span>
+                                                <i data-lucide="chevron-down" class="w-3 h-3 text-noirTextMuted"></i>
+                                            </button>
                                         </div>
-                                        <p class="text-[11px] text-noirTextMuted mt-1 leading-tight">
+                                        <p id="gui-mode-desc" class="text-[11px] text-noirTextMuted mt-1 leading-tight">
                                             Установите желаемый стиль рендера элементов GUI и HUD.
                                         </p>
                                     </div>
                                     <div class="bg-neutral-50 dark:bg-[#1f1f1f] rounded-lg p-2.5 border border-noirBorder flex items-center justify-between text-xs">
                                         <span class="text-noirText">Анимация переходов</span>
-                                        <div class="w-7 h-4 bg-black dark:bg-white rounded-full flex items-center justify-end px-0.5">
-                                            <div class="w-3 h-3 bg-white dark:bg-black rounded-full"></div>
-                                        </div>
+                                        <button id="gui-anim-toggle" type="button" onclick="toggleGuiAnimation()" class="w-8 h-4.5 bg-black dark:bg-white rounded-full flex items-center justify-end px-0.5 cursor-pointer transition-colors shadow-inner" title="Включить / выключить анимации">
+                                            <div id="gui-anim-knob" class="w-3.5 h-3.5 bg-white dark:bg-black rounded-full shadow transition-transform"></div>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -299,27 +304,27 @@
                         <!-- HUD Graphic elements simulated from screenshot -->
                         <div class="h-64 rounded-xl bg-neutral-100 dark:bg-black/60 border border-noirBorder relative p-3 overflow-hidden mb-6 flex flex-wrap gap-2 items-center justify-center">
                             <!-- Keybinds pill -->
-                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-3 text-xs">
+                            <div onclick="toggleHudPill(this)" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-3 text-xs cursor-pointer select-none transition active:scale-95" title="Кликните для включения / скрытия">
                                 <div class="flex items-center space-x-1.5 text-noirText">
                                     <i data-lucide="keyboard" class="w-3.5 h-3.5"></i>
                                     <span class="font-medium">Keybinds</span>
                                 </div>
-                                <span class="text-noirTextMuted font-mono text-[10px]">Active</span>
+                                <span class="hud-pill-status text-emerald-400 font-mono text-[10px]">Active</span>
                             </div>
 
-                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs">
+                            <div onclick="cyclePillKey(this, 'SwingAnimation', ['K', 'MOUSE4', 'V', 'F'])" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs cursor-pointer select-none transition active:scale-95" title="Кликните для смены клавиши">
                                 <span class="text-noirText">SwingAnimation</span>
-                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText">K</span>
+                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText key-badge">K</span>
                             </div>
 
-                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs">
+                            <div onclick="cyclePillKey(this, 'HitboxTweaks', ['R', 'MOUSE5', 'B', 'C'])" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs cursor-pointer select-none transition active:scale-95" title="Кликните для смены клавиши">
                                 <span class="text-noirText">HitboxTweaks</span>
-                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText">R</span>
+                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText key-badge">R</span>
                             </div>
 
-                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs">
+                            <div onclick="cyclePillKey(this, 'Trajectory', ['V', 'X', 'Z', 'G'])" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs cursor-pointer select-none transition active:scale-95" title="Кликните для смены клавиши">
                                 <span class="text-noirText">Trajectory</span>
-                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText">V</span>
+                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText key-badge">V</span>
                             </div>
 
                             <!-- Cooldowns Box Widget -->
@@ -329,19 +334,20 @@
                                         <i data-lucide="clock" class="w-3 h-3"></i>
                                         <span>Cooldowns</span>
                                     </span>
+                                    <span class="text-[9px] text-neutral-500 font-mono">click timer</span>
                                 </div>
                                 <div class="space-y-1 font-mono text-[10px]">
-                                    <div class="flex justify-between text-noirText">
+                                    <div id="cd-ender-pearl" onclick="restartCooldown('cd-ender-pearl', 'Ender Pearl', 15)" class="flex justify-between text-noirText cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 px-1.5 py-0.5 rounded transition" title="Кликните для сброса кулдауна">
                                         <span>Ender Pearl</span>
-                                        <span class="text-noirTextMuted">0:01</span>
+                                        <span class="cd-val text-noirTextMuted">0:01</span>
                                     </div>
-                                    <div class="flex justify-between text-noirText">
+                                    <div id="cd-golden-apple" onclick="restartCooldown('cd-golden-apple', 'Golden Apple', 30)" class="flex justify-between text-noirText cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 px-1.5 py-0.5 rounded transition" title="Кликните для сброса кулдауна">
                                         <span>Golden Apple</span>
-                                        <span class="text-noirTextMuted">0:09</span>
+                                        <span class="cd-val text-noirTextMuted">0:09</span>
                                     </div>
-                                    <div class="flex justify-between text-noirText">
+                                    <div id="cd-chorus" onclick="restartCooldown('cd-chorus', 'Chorus', 5)" class="flex justify-between text-noirText cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 px-1.5 py-0.5 rounded transition" title="Кликните для сброса кулдауна">
                                         <span>Chorus</span>
-                                        <span class="text-noirTextMuted">0:01</span>
+                                        <span class="cd-val text-noirTextMuted">0:01</span>
                                     </div>
                                 </div>
                             </div>
@@ -353,17 +359,18 @@
                                         <i data-lucide="map-pin" class="w-3 h-3"></i>
                                         <span>Waypoints</span>
                                     </span>
+                                    <span class="text-[9px] text-neutral-500 font-mono">click to copy</span>
                                 </div>
                                 <div class="space-y-1 font-mono text-[10px]">
-                                    <div class="flex justify-between text-noirText">
+                                    <div onclick="clickWaypoint('Spawn', '812m')" class="flex justify-between text-noirText cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 px-1.5 py-0.5 rounded transition" title="Скопировать метку">
                                         <span>Spawn</span>
                                         <span class="text-noirTextMuted">812m</span>
                                     </div>
-                                    <div class="flex justify-between text-noirText">
+                                    <div onclick="clickWaypoint('SystemHome', '10m')" class="flex justify-between text-noirText cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 px-1.5 py-0.5 rounded transition" title="Скопировать метку">
                                         <span>SystemHome</span>
                                         <span class="text-noirTextMuted">10m</span>
                                     </div>
-                                    <div class="flex justify-between text-noirText">
+                                    <div onclick="clickWaypoint('Arena', '82843m')" class="flex justify-between text-noirText cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/60 px-1.5 py-0.5 rounded transition" title="Скопировать метку">
                                         <span>Arena</span>
                                         <span class="text-noirTextMuted">82843m</span>
                                     </div>
@@ -390,33 +397,37 @@
                             <div class="w-full max-w-xs bg-white dark:bg-[#161616] border border-noirBorder rounded-xl p-4 shadow-xl space-y-3">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-2">
-                                        <i data-lucide="lock" class="w-3.5 h-3.5 text-noirTextMuted"></i>
+                                        <button type="button" onclick="toggleConfigLock(this)" class="hover:scale-110 transition cursor-pointer text-noirTextMuted" title="Изменить приватность">
+                                            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                                        </button>
                                         <span class="font-bold text-xs text-noirText">Legit_04</span>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        <span class="text-[10px] text-noirTextMuted font-mono">Нет</span>
-                                        <i data-lucide="star" class="w-3.5 h-3.5 text-noirTextMuted"></i>
-                                        <div class="w-6 h-3.5 bg-black dark:bg-white rounded-full flex items-center justify-end px-0.5">
-                                            <div class="w-2.5 h-2.5 bg-white dark:bg-black rounded-full"></div>
-                                        </div>
+                                        <span id="cfg-priv-label" class="text-[10px] text-noirTextMuted font-mono">Нет</span>
+                                        <button type="button" onclick="toggleCardStar(this)" class="hover:scale-110 transition cursor-pointer text-noirTextMuted" title="В избранное">
+                                            <i data-lucide="star" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button id="cfg-priv-toggle" type="button" onclick="toggleConfigPrivacy()" class="w-7 h-4 bg-neutral-300 dark:bg-neutral-800 rounded-full flex items-center justify-start px-0.5 cursor-pointer transition-colors" title="Приватный режим">
+                                            <div id="cfg-priv-knob" class="w-3 h-3 bg-white dark:bg-neutral-400 rounded-full shadow transition-transform"></div>
+                                        </button>
                                     </div>
                                 </div>
                                 
                                 <div class="bg-neutral-50 dark:bg-[#1f1f1f] p-2.5 rounded-lg border border-noirBorder">
-                                    <div class="text-[11px] font-semibold text-noirText">Приватный конфиг</div>
-                                    <p class="text-[10px] text-noirTextMuted mt-0.5 leading-snug">
+                                    <div id="cfg-priv-title" class="text-[11px] font-semibold text-noirText">Приватный конфиг</div>
+                                    <p id="cfg-priv-desc" class="text-[10px] text-noirTextMuted mt-0.5 leading-snug">
                                         Сделает ваш конфиг приватным. Пользователи, использующие данный конфиг, не смогут им поделиться.
                                     </p>
                                 </div>
 
                                 <div class="pt-1 flex items-center justify-between text-[11px]">
                                     <span class="text-noirTextMuted">Генерация ключа</span>
-                                    <span class="font-mono text-[10px] text-noirText underline cursor-pointer hover:opacity-80" onclick="showToast('Сгенерирован ключ конфига CFG-280526')">Сгенерировать</span>
+                                    <button type="button" onclick="generateConfigKeyDemo()" class="font-mono text-[10px] text-noirText underline cursor-pointer hover:opacity-80 active:scale-95 transition">Сгенерировать</button>
                                 </div>
 
                                 <div class="pt-1 border-t border-noirBorder flex items-center justify-between text-[10px] text-noirTextMuted font-mono">
                                     <span>Создан: 28.05.2026</span>
-                                    <span>ID: #9924-A</span>
+                                    <span id="cfg-demo-id" onclick="copyConfigId(this)" class="cursor-pointer hover:text-noirText transition underline decoration-dotted" title="Нажмите, чтобы скопировать ID">ID: #9924-A</span>
                                 </div>
                             </div>
                         </div>
@@ -439,19 +450,19 @@
                         <div class="h-64 rounded-xl bg-neutral-100 dark:bg-black/60 border border-noirBorder relative p-4 overflow-hidden mb-6 flex flex-col justify-center space-y-2">
                             
                             <!-- Notification pill -->
-                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-2 rounded-xl text-xs flex items-center justify-between">
+                            <div id="card-notif-pill" onclick="triggerAppleNotification()" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-3 py-2 rounded-xl text-xs flex items-center justify-between cursor-pointer transition select-none active:scale-95" title="Кликните для симуляции уведомления">
                                 <div class="flex items-center space-x-2">
                                     <span class="text-noirText">Игрок использовал <span class="font-semibold underline decoration-neutral-400">Зач. Золотое яблоко</span></span>
                                 </div>
-                                <span class="text-noirTextMuted font-mono text-[10px]">Включено</span>
+                                <span id="card-notif-status" class="text-emerald-400 font-mono text-[10px]">Включено</span>
                             </div>
 
                             <!-- Target Healthbar Widget -->
-                            <div class="bg-white dark:bg-[#181818] border border-noirBorder p-2.5 rounded-xl flex items-center justify-between">
+                            <div id="target-hud-widget" onclick="simulateTargetDamage()" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition-all select-none active:scale-95" title="Нажмите, чтобы ударить цель!">
                                 <div class="flex items-center space-x-2 text-xs">
                                     <div class="w-5 h-5 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-[10px]">T</div>
                                     <span class="font-medium text-noirText">Tlauncher947100</span>
-                                    <span class="text-rose-500 font-mono text-[11px] font-bold">4 HP</span>
+                                    <span id="target-hp-badge" class="text-rose-500 font-mono text-[11px] font-bold transition-all">4 HP</span>
                                 </div>
                                 <div class="flex items-center space-x-2 text-[10px] text-noirTextMuted font-mono">
                                     <span>144 FPS</span>
@@ -461,9 +472,9 @@
 
                             <!-- Coordinates bar -->
                             <div class="flex items-center space-x-2 overflow-x-auto text-[10px] font-mono text-noirText">
-                                <span class="bg-white dark:bg-[#181818] border border-noirBorder px-2.5 py-1 rounded-lg">X -146 Y 80 Z 412</span>
-                                <span class="bg-white dark:bg-[#181818] border border-noirBorder px-2.5 py-1 rounded-lg">Waypoint 812m</span>
-                                <span class="bg-white dark:bg-[#181818] border border-noirBorder px-2.5 py-1 rounded-lg">x5 x48 MLB5</span>
+                                <span onclick="copyCoordBadge(this, 'X -146 Y 80 Z 412')" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-2.5 py-1 rounded-lg cursor-pointer transition active:scale-95 select-none" title="Скопировать координаты">X -146 Y 80 Z 412</span>
+                                <span onclick="copyCoordBadge(this, 'Waypoint 812m')" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-2.5 py-1 rounded-lg cursor-pointer transition active:scale-95 select-none" title="Скопировать метку">Waypoint 812m</span>
+                                <span onclick="copyCoordBadge(this, 'x5 x48 MLB5')" class="bg-white dark:bg-[#181818] border border-noirBorder hover:border-noirBorderStrong px-2.5 py-1 rounded-lg cursor-pointer transition active:scale-95 select-none" title="Скопировать статы">x5 x48 MLB5</span>
                             </div>
                         </div>
 
@@ -943,7 +954,12 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 </div>
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Пароль</label>
-                    <input id="login-password" type="password" required placeholder="••••••••" autocomplete="current-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                    <div class="relative flex items-center">
+                        <input id="login-password" type="password" required placeholder="••••••••" autocomplete="current-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                        <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer" title="Показать / скрыть пароль">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition shadow-sm">
                     Войти в аккаунт
@@ -959,11 +975,21 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 </div>
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Придумайте пароль</label>
-                    <input id="reg-password" type="password" required placeholder="Минимум 6 символов" autocomplete="new-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                    <div class="relative flex items-center">
+                        <input id="reg-password" type="password" required placeholder="Минимум 6 символов" autocomplete="new-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                        <button type="button" onclick="togglePasswordVisibility('reg-password', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer" title="Показать / скрыть пароль">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Повторите пароль</label>
-                    <input id="reg-password-confirm" type="password" required placeholder="Повторите пароль" autocomplete="new-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                    <div class="relative flex items-center">
+                        <input id="reg-password-confirm" type="password" required placeholder="Повторите пароль" autocomplete="new-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                        <button type="button" onclick="togglePasswordVisibility('reg-password-confirm', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer" title="Показать / скрыть пароль">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="text-[10px] text-noirTextMuted font-mono leading-tight">
                     При регистрации система закрепит за вами уникальный числовой UID в базе данных.
@@ -1743,6 +1769,259 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 statusText.classList.add('text-emerald-500');
             }
             showToast("Скрипт main.lua успешно запущен!");
+        }
+
+        // PASSWORD VISIBILITY TOGGLE (EYE BUTTON)
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const isPass = input.type === 'password';
+            input.type = isPass ? 'text' : 'password';
+            btn.innerHTML = `<i data-lucide="${isPass ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // --- INTERACTIVE SHOWCASE CARDS (SCREENSHOT 3) ---
+
+        // CARD 01: GUI Mode cycler
+        const guiModes = [
+            { name: "Modern", desc: "Установите желаемый стиль рендера элементов GUI и HUD." },
+            { name: "Minimal", desc: "Ультратонкие границы и минималистичный полупрозрачный фон." },
+            { name: "Classic", desc: "Классический блочный стиль с чёткими контрастными контурами." },
+            { name: "Compact", desc: "Минимальный размер виджетов для максимального обзора в бою." }
+        ];
+        let currentGuiModeIdx = 0;
+
+        function cycleGuiMode() {
+            currentGuiModeIdx = (currentGuiModeIdx + 1) % guiModes.length;
+            const mode = guiModes[currentGuiModeIdx];
+            const textEl = document.getElementById('gui-mode-text');
+            const descEl = document.getElementById('gui-mode-desc');
+            if (textEl) textEl.innerText = mode.name;
+            if (descEl) descEl.innerText = mode.desc;
+            showToast(`Стиль GUI переключен: ${mode.name}`);
+        }
+
+        let guiAnimEnabled = true;
+        function toggleGuiAnimation() {
+            guiAnimEnabled = !guiAnimEnabled;
+            const toggle = document.getElementById('gui-anim-toggle');
+            const knob = document.getElementById('gui-anim-knob');
+            if (toggle && knob) {
+                if (guiAnimEnabled) {
+                    toggle.className = "w-8 h-4.5 bg-black dark:bg-white rounded-full flex items-center justify-end px-0.5 cursor-pointer transition-colors shadow-inner";
+                    knob.className = "w-3.5 h-3.5 bg-white dark:bg-black rounded-full shadow transition-transform";
+                    showToast("Анимация переходов: Включена");
+                } else {
+                    toggle.className = "w-8 h-4.5 bg-neutral-300 dark:bg-neutral-800 rounded-full flex items-center justify-start px-0.5 cursor-pointer transition-colors shadow-inner";
+                    knob.className = "w-3.5 h-3.5 bg-white dark:bg-neutral-400 rounded-full shadow transition-transform";
+                    showToast("Анимация переходов: Выключена");
+                }
+            }
+        }
+
+        function cycleCardKeybind(btn) {
+            const keys = ['R', 'G', 'F', 'C', 'V', 'Z'];
+            const cur = btn.innerText.trim();
+            const idx = keys.indexOf(cur);
+            const nextKey = keys[(idx + 1) % keys.length];
+            btn.innerText = nextKey;
+            showToast(`Бинд интерфейса изменен на [${nextKey}]`);
+        }
+
+        function toggleCardStar(btn) {
+            const isFav = btn.classList.toggle('text-amber-400');
+            if (isFav) {
+                btn.classList.remove('text-noirTextMuted');
+                showToast("Добавлено в избранное ⭐");
+            } else {
+                btn.classList.add('text-noirTextMuted');
+                showToast("Удалено из избранного");
+            }
+        }
+
+        function cycleCardDot(btn) {
+            const colors = [
+                { bg: 'bg-emerald-400', name: 'Активен (Green)' },
+                { bg: 'bg-rose-500', name: 'Отключен (Red)' },
+                { bg: 'bg-sky-400', name: 'Ожидание (Cyan)' },
+                { bg: 'bg-white', name: 'Нейтральный (White)' }
+            ];
+            let currentIdx = 0;
+            for (let i = 0; i < colors.length; i++) {
+                if (btn.classList.contains(colors[i].bg)) {
+                    currentIdx = i;
+                    btn.classList.remove(colors[i].bg);
+                    break;
+                }
+            }
+            const next = colors[(currentIdx + 1) % colors.length];
+            btn.classList.add(next.bg);
+            showToast(`Статус модуля: ${next.name}`);
+        }
+
+        // CARD 02: HUD elements
+        function toggleHudPill(el) {
+            const status = el.querySelector('.hud-pill-status');
+            if (!status) return;
+            const isActive = status.innerText.trim() === 'Active';
+            if (isActive) {
+                status.innerText = 'Hidden';
+                status.className = 'hud-pill-status text-noirTextMuted font-mono text-[10px]';
+                showToast("Виджет Keybinds скрыт");
+            } else {
+                status.innerText = 'Active';
+                status.className = 'hud-pill-status text-emerald-400 font-mono text-[10px]';
+                showToast("Виджет Keybinds активен");
+            }
+        }
+
+        function cyclePillKey(el, name, keys) {
+            const badge = el.querySelector('.key-badge');
+            if (!badge) return;
+            const cur = badge.innerText.trim();
+            const idx = keys.indexOf(cur);
+            const nextKey = keys[(idx + 1) % keys.length];
+            badge.innerText = nextKey;
+            el.classList.add('scale-105');
+            setTimeout(() => el.classList.remove('scale-105'), 150);
+            showToast(`${name}: клавиша изменена на [${nextKey}]`);
+        }
+
+        const cdIntervals = {};
+        function restartCooldown(id, label, sec) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const valEl = el.querySelector('.cd-val');
+            if (!valEl) return;
+
+            if (cdIntervals[id]) clearInterval(cdIntervals[id]);
+            let remaining = sec;
+            valEl.innerText = `0:${remaining < 10 ? '0' : ''}${remaining}`;
+            valEl.className = 'cd-val text-amber-400 font-bold';
+            showToast(`Кулдаун ${label} запущен (${sec} сек)`);
+
+            cdIntervals[id] = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(cdIntervals[id]);
+                    valEl.innerText = 'ГОТОВО';
+                    valEl.className = 'cd-val text-emerald-400 font-bold';
+                    setTimeout(() => {
+                        valEl.innerText = '0:01';
+                        valEl.className = 'cd-val text-noirTextMuted';
+                    }, 2500);
+                } else {
+                    valEl.innerText = `0:${remaining < 10 ? '0' : ''}${remaining}`;
+                }
+            }, 1000);
+        }
+
+        function clickWaypoint(name, dist) {
+            const coords = name === 'Spawn' ? 'X: 0 Y: 64 Z: 0' : (name === 'SystemHome' ? 'X: 140 Y: 72 Z: -380' : 'X: 12400 Y: 110 Z: 82840');
+            navigator.clipboard.writeText(coords).catch(() => {});
+            showToast(`Метка [${name}]: координаты скопированы! (Дистанция ${dist})`);
+        }
+
+        // CARD 03: Web configs
+        let configIsPrivate = false;
+        function toggleConfigPrivacy() {
+            configIsPrivate = !configIsPrivate;
+            const toggle = document.getElementById('cfg-priv-toggle');
+            const knob = document.getElementById('cfg-priv-knob');
+            const label = document.getElementById('cfg-priv-label');
+            const title = document.getElementById('cfg-priv-title');
+            const desc = document.getElementById('cfg-priv-desc');
+
+            if (configIsPrivate) {
+                if (toggle) toggle.className = "w-7 h-4 bg-emerald-500 rounded-full flex items-center justify-end px-0.5 cursor-pointer transition-colors";
+                if (knob) knob.className = "w-3 h-3 bg-white rounded-full shadow transition-transform";
+                if (label) { label.innerText = "Да"; label.className = "text-[10px] text-emerald-400 font-mono font-bold"; }
+                if (title) title.innerText = "Приватный конфиг [Активен]";
+                if (desc) desc.innerText = "Конфиг защищен уникальным ключом. Доступ разрешен только доверенным пользователям.";
+                showToast("Конфиг переведен в приватный режим");
+            } else {
+                if (toggle) toggle.className = "w-7 h-4 bg-neutral-300 dark:bg-neutral-800 rounded-full flex items-center justify-start px-0.5 cursor-pointer transition-colors";
+                if (knob) knob.className = "w-3 h-3 bg-white dark:bg-neutral-400 rounded-full shadow transition-transform";
+                if (label) { label.innerText = "Нет"; label.className = "text-[10px] text-noirTextMuted font-mono"; }
+                if (title) title.innerText = "Публичный конфиг";
+                if (desc) desc.innerText = "Конфиг доступен в публичной галерее. Пользователи могут загрузить его в лаунчер.";
+                showToast("Конфиг открыт для публичного доступа");
+            }
+        }
+
+        function toggleConfigLock(btn) {
+            toggleConfigPrivacy();
+            const icon = btn.querySelector('[data-lucide], svg');
+            if (icon) {
+                icon.setAttribute('data-lucide', configIsPrivate ? 'lock' : 'unlock');
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function generateConfigKeyDemo() {
+            const randHex = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const newKey = `CFG-${randHex}`;
+            const idEl = document.getElementById('cfg-demo-id');
+            if (idEl) idEl.innerText = `ID: #${randHex}-A`;
+            navigator.clipboard.writeText(newKey).catch(() => {});
+            showToast(`Сгенерирован ключ: ${newKey} (скопирован в буфер)`);
+        }
+
+        function copyConfigId(el) {
+            const text = el.innerText.replace('ID: ', '');
+            navigator.clipboard.writeText(text).catch(() => {});
+            showToast(`ID конфига ${text} скопирован!`);
+        }
+
+        // CARD 04: Notifications & Target HUD
+        let notifAppleEnabled = true;
+        function triggerAppleNotification() {
+            notifAppleEnabled = !notifAppleEnabled;
+            const status = document.getElementById('card-notif-status');
+            if (status) {
+                status.innerText = notifAppleEnabled ? "Включено" : "Выключено";
+                status.className = notifAppleEnabled ? "text-emerald-400 font-mono text-[10px]" : "text-noirTextMuted font-mono text-[10px]";
+            }
+            showToast(notifAppleEnabled ? "🍏 [Уведомление]: Игрок Tlauncher947100 съел Зачарованное золотое яблоко!" : "Уведомления о золотых яблоках отключены");
+        }
+
+        let targetHp = 4;
+        function simulateTargetDamage() {
+            const widget = document.getElementById('target-hud-widget');
+            const hpBadge = document.getElementById('target-hp-badge');
+            if (!widget || !hpBadge) return;
+
+            // Damage sequence
+            if (targetHp === 4) targetHp = 2;
+            else if (targetHp === 2) targetHp = 0;
+            else if (targetHp === 0) targetHp = 20;
+            else targetHp -= 4;
+
+            // Visual hit feedback
+            widget.classList.add('ring-2', 'ring-rose-500', 'bg-rose-500/10');
+            setTimeout(() => {
+                widget.classList.remove('ring-2', 'ring-rose-500', 'bg-rose-500/10');
+            }, 180);
+
+            if (targetHp === 0) {
+                hpBadge.innerText = "DEAD";
+                hpBadge.className = "text-neutral-500 font-mono text-[11px] font-black line-through";
+                showToast("⚔️ Цель Tlauncher947100 уничтожена!");
+            } else {
+                hpBadge.innerText = `${targetHp} HP`;
+                hpBadge.className = targetHp <= 4 ? "text-rose-500 font-mono text-[11px] font-bold" : (targetHp <= 10 ? "text-amber-400 font-mono text-[11px] font-bold" : "text-emerald-400 font-mono text-[11px] font-bold");
+                showToast(`⚔️ Удар по Tlauncher947100! Осталось: ${targetHp} HP`);
+            }
+        }
+
+        function copyCoordBadge(el, text) {
+            navigator.clipboard.writeText(text).catch(() => {});
+            el.classList.add('border-emerald-500', 'text-emerald-400');
+            setTimeout(() => {
+                el.classList.remove('border-emerald-500', 'text-emerald-400');
+            }, 300);
+            showToast(`Скопировано: ${text}`);
         }
     </script>
 </body>

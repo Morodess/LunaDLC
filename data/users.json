@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "uid": 1,
+      "username": "TOmoro",
+      "password": "GENSIS2323",
+      "role": "Admin",
+      "subscription": "Lifetime",
+      "subExpiry": "2099-12-31",
+      "hwid": "E4F9-98A1-440B-CC02-LUNA",
+      "createdAt": "2026-01-01"
+    },
+    {
+      "uid": 2,
+      "username": "admin",
+      "password": "admin123",
+      "role": "Admin",
+      "subscription": "Lifetime",
+      "subExpiry": "2099-12-31",
+      "hwid": "",
+      "createdAt": "2026-01-01"
+    }
+  ],
+  "keys": [
+    {
+      "key": "LUNA-VIP1-7788-9900",
+      "duration": "lifetime",
+      "durationLabel": "Lifetime (Навсегда)",
+      "createdAt": "2026-10-26",
+      "used": false,
+      "usedByUid": null,
+      "usedAt": null
+    },
+    {
+      "key": "LUNA-SUB1-30DD-MONTH",
+      "duration": "30d",
+      "durationLabel": "30 дней (1 месяц)",
+      "createdAt": "2026-10-26",
+      "used": false,
+      "usedByUid": null,
+      "usedAt": null
+    }
+  ]
+}

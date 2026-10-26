@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LunaClient — Архитектура доминирования</title>
+    <!-- Tailwind CSS CDN with dark mode configured via class -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        noirBg: 'var(--bg-primary)',
+                        noirCard: 'var(--bg-card)',
+                        noirBorder: 'var(--border-subtle)',
+                        noirBorderStrong: 'var(--border-strong)',
+                        noirText: 'var(--text-primary)',
+                        noirTextMuted: 'var(--text-muted)'
+                    },
+                    fontFamily: {
+                        sans: ['"Inter"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        cursive: ['"Caveat"', 'cursive'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --bg-primary: #070707;
+            --bg-card: #0f0f0f;
+            --border-subtle: #1e1e1e;
+            --border-strong: #333333;
+            --text-primary: #ffffff;
+            --text-muted: #888888;
+        }
+
+        html:not(.dark) {
+            --bg-primary: #f6f6f7;
+            --bg-card: #ffffff;
+            --border-subtle: #e2e2e5;
+            --border-strong: #b5b5be;
+            --text-primary: #0a0a0a;
+            --text-muted: #5e5e66;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        /* Handwriting pen stroke animation */
+        .handwrite-path {
+            stroke-dasharray: 1200;
+            stroke-dashoffset: 1200;
+            animation: drawInk 2.5s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+        }
+
+        @keyframes drawInk {
+            0% {
+                stroke-dashoffset: 1200;
+                opacity: 0.15;
+            }
+            30% {
+                opacity: 1;
+            }
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+        }
+
+        /* Subtle grid pattern */
+        .subtle-grid {
+            background-image: radial-gradient(currentColor 0.75px, transparent 0.75px);
+            background-size: 24px 24px;
+            opacity: 0.05;
+        }
+
+        /* Smooth scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(120, 120, 120, 0.25);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.45);
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen selection:bg-neutral-800 selection:text-white dark:selection:bg-white dark:selection:text-black antialiased overflow-x-hidden">
+
+    <!-- INTRO CALLIGRAPHY PEN ANIMATION OVERLAY -->
+    <div id="intro-screen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-all duration-1000">
+        <div class="relative flex flex-col items-center justify-center p-6 select-none text-center">
+            <svg class="w-[300px] sm:w-[560px] h-[130px] sm:h-[190px]" viewBox="0 0 600 200" fill="none">
+                <text x="300" y="130" text-anchor="middle" font-family="'Caveat', cursive" font-size="118" font-weight="700"
+                      stroke="#ffffff" stroke-width="2.8" fill="transparent" stroke-linecap="round" stroke-linejoin="round"
+                      class="handwrite-path tracking-wide">
+                    LunaClient
+                </text>
+            </svg>
+
+            <div id="intro-subtitle" class="opacity-0 transition-opacity duration-700 mt-2">
+                <span class="text-xs uppercase tracking-[0.35em] text-neutral-400 font-mono">Neural Precision & Minimalist Control</span>
+            </div>
+
+            <button onclick="skipIntro()" class="mt-8 text-[11px] text-neutral-500 hover:text-white uppercase tracking-widest transition-colors font-mono py-1.5 px-4 rounded-full border border-neutral-800">
+                [Пропустить интро]
+            </button>
+        </div>
+    </div>
+
+    <!-- GLOBAL SITE CONTAINER -->
+    <div id="main-content" class="relative z-10 min-h-screen flex flex-col opacity-0 transition-opacity duration-1000">
+        
+        <div class="fixed inset-0 subtle-grid pointer-events-none z-0"></div>
+
+        <!-- STICKY NAVIGATION BAR -->
+        <header class="w-full sticky top-0 z-40 bg-white/85 dark:bg-black/85 backdrop-blur-md border-b border-noirBorder transition-colors">
+            <div class="max-w-7xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between relative z-10">
+                
+                <!-- Brand Logo -->
+                <div class="flex items-center space-x-6">
+                    <button onclick="navigateTab('main')" class="flex items-center space-x-3 group">
+                        <div class="w-8 h-8 rounded-lg bg-black dark:bg-white text-white dark:text-black flex items-center justify-center font-black text-sm tracking-tighter transition-colors">
+                            LC
+                        </div>
+                        <span class="font-extrabold text-lg tracking-tight text-noirText group-hover:opacity-80 transition-opacity">
+                            LunaClient
+                        </span>
+                    </button>
+
+                    <!-- Links -->
+                    <nav class="hidden md:flex items-center space-x-6 text-sm text-noirTextMuted font-medium">
+                        <button onclick="navigateTab('main')" class="hover:text-noirText transition-colors">Главная</button>
+                        <a href="#features-section" class="hover:text-noirText transition-colors">Возможности</a>
+                        <a href="#pricing-section" class="hover:text-noirText transition-colors">Тарифы</a>
+                        <button onclick="navigateTab('webconfigs')" class="hover:text-noirText transition-colors flex items-center space-x-1.5">
+                            <span>Web-конфиги</span>
+                            <span class="text-[10px] px-1.5 py-0.2 rounded bg-neutral-200 dark:bg-neutral-800 text-noirText font-mono">Cloud</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Right Controls: Theme Switcher & Account -->
+                <div class="flex items-center space-x-3">
+                    <!-- Theme Toggle Button -->
+                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="p-2 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-noirText transition-all" title="Сменить тему">
+                        <i id="theme-icon" data-lucide="sun" class="w-4 h-4"></i>
+                    </button>
+
+                    <!-- Personal Cabinet Button -->
+                    <button id="account-btn" onclick="handleAccountButtonClick()" class="px-3.5 py-1.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-semibold uppercase tracking-wider hover:opacity-90 transition-all flex items-center space-x-2">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                        <span id="account-btn-text">Личный кабинет</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- VIEW 1: MAIN LANDING VIEW -->
+        <main id="view-main" class="flex-grow flex flex-col relative z-10">
+
+            <!-- HERO SECTION -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-8 pt-16 pb-14 w-full text-left border-b border-noirBorder">
+                <div class="max-w-4xl space-y-6">
+                    <!-- Version Badge -->
+                    <div class="inline-flex items-center space-x-2.5 px-3.5 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder text-xs text-noirText font-mono">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="font-bold">V1.0</span>
+                        <span class="text-noirTextMuted">•</span>
+                        <span class="text-noirTextMuted">Поддержка Minecraft 1.21.11 / 26.2</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-7xl font-black tracking-tight leading-[1.08] text-noirText uppercase">
+                        Интеллект.<br>
+                        Абсолютный контроль.
+                    </h1>
+
+                    <p class="text-base sm:text-xl text-noirTextMuted max-w-2xl font-normal leading-relaxed">
+                        Автономная архитектура нового поколения. Нейросетевой анализ игровых пакетов, идеальная читаемость в PvP и бескомпромиссная скорость отклика на любом игровом сервере.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ARCHITECTURE / FEATURES SECTION (1-TO-1 SCREENSHOT REPRODUCTION) -->
+            <section id="features-section" class="max-w-7xl mx-auto px-4 sm:px-8 py-20 w-full">
+                
+                <!-- Section Header Matching Screenshot -->
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
+                    <div class="space-y-3">
+                        <h2 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-noirText">
+                            Архитектура доминирования
+                        </h2>
+                        <p class="text-sm sm:text-base text-noirTextMuted max-w-2xl font-normal leading-relaxed">
+                            Тщательно подобранный набор улучшений: повышенная стабильность, отзывчивость и максимально плавный игровой процесс.
+                        </p>
+                    </div>
+
+                    <!-- Theme control widget as shown on original screenshot -->
+                    <div class="flex items-center self-start sm:self-auto space-x-1.5 bg-neutral-200/80 dark:bg-neutral-900/90 border border-noirBorder p-1.5 rounded-full">
+                        <button onclick="setTheme('dark')" class="p-1.5 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-800 text-noirText transition" title="Темная тема">
+                            <i data-lucide="moon" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="setTheme('light')" class="p-1.5 rounded-full hover:bg-neutral-300 dark:hover:bg-neutral-800 text-noirText transition" title="Светлая тема">
+                            <i data-lucide="sun" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Exact Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <!-- CARD 01: Игровой GUI -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorder p-6 flex flex-col justify-between overflow-hidden relative group hover:border-noirBorderStrong transition-all duration-300 shadow-sm">
+                        <!-- Preview window mockup -->
+                        <div class="h-64 rounded-xl bg-neutral-100 dark:bg-black/60 border border-noirBorder relative p-4 overflow-hidden mb-6 flex items-center justify-center">
+                            <div class="w-full max-w-sm bg-white dark:bg-[#161616] rounded-xl border border-noirBorder p-4 shadow-xl scale-95 transition-transform duration-300 group-hover:scale-100">
+                                <!-- Interface Bar -->
+                                <div class="flex items-center justify-between border-b border-noirBorder pb-3 mb-3">
+                                    <div class="flex items-center space-x-2 text-noirText">
+                                        <i data-lucide="sliders" class="w-4 h-4"></i>
+                                        <span class="text-xs font-semibold tracking-wide">Interface</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2 text-noirTextMuted text-xs">
+                                        <span class="border border-noirBorder px-1.5 py-0.5 rounded text-[10px] font-mono">R</span>
+                                        <i data-lucide="star" class="w-3.5 h-3.5"></i>
+                                        <div class="w-2.5 h-2.5 rounded-full bg-black dark:bg-white"></div>
+                                    </div>
+                                </div>
+                                <!-- Interface Options -->
+                                <div class="space-y-2.5">
+                                    <div class="bg-neutral-50 dark:bg-[#1f1f1f] rounded-lg p-2.5 border border-noirBorder">
+                                        <div class="flex items-center justify-between text-xs text-noirText">
+                                            <div class="flex items-center space-x-2">
+                                                <i data-lucide="layout" class="w-3.5 h-3.5 text-noirTextMuted"></i>
+                                                <span class="font-medium">Режим отображения</span>
+                                            </div>
+                                            <span class="text-[10px] bg-neutral-200 dark:bg-neutral-800 text-noirText px-2 py-0.5 rounded font-mono">Modern</span>
+                                        </div>
+                                        <p class="text-[11px] text-noirTextMuted mt-1 leading-tight">
+                                            Установите желаемый стиль рендера элементов GUI и HUD.
+                                        </p>
+                                    </div>
+                                    <div class="bg-neutral-50 dark:bg-[#1f1f1f] rounded-lg p-2.5 border border-noirBorder flex items-center justify-between text-xs">
+                                        <span class="text-noirText">Анимация переходов</span>
+                                        <div class="w-7 h-4 bg-black dark:bg-white rounded-full flex items-center justify-end px-0.5">
+                                            <div class="w-3 h-3 bg-white dark:bg-black rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card text matching screenshot -->
+                        <div>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="font-mono text-xs text-noirTextMuted">01</span>
+                                <h3 class="text-lg font-bold text-noirText tracking-tight">Игровой GUI</h3>
+                            </div>
+                            <p class="text-sm text-noirTextMuted mt-2 leading-relaxed">
+                                Встроенный интерфейс для тонкой настройки каждого модуля прямо в игре.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- CARD 02: HUD элементы -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorder p-6 flex flex-col justify-between overflow-hidden relative group hover:border-noirBorderStrong transition-all duration-300 shadow-sm">
+                        <!-- HUD Graphic elements simulated from screenshot -->
+                        <div class="h-64 rounded-xl bg-neutral-100 dark:bg-black/60 border border-noirBorder relative p-3 overflow-hidden mb-6 flex flex-wrap gap-2 items-center justify-center">
+                            <!-- Keybinds pill -->
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-3 text-xs">
+                                <div class="flex items-center space-x-1.5 text-noirText">
+                                    <i data-lucide="keyboard" class="w-3.5 h-3.5"></i>
+                                    <span class="font-medium">Keybinds</span>
+                                </div>
+                                <span class="text-noirTextMuted font-mono text-[10px]">Active</span>
+                            </div>
+
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs">
+                                <span class="text-noirText">SwingAnimation</span>
+                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText">K</span>
+                            </div>
+
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs">
+                                <span class="text-noirText">HitboxTweaks</span>
+                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText">R</span>
+                            </div>
+
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-1.5 rounded-xl shadow-sm flex items-center space-x-2 text-xs">
+                                <span class="text-noirText">Trajectory</span>
+                                <span class="font-mono text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 py-0.5 rounded text-noirText">V</span>
+                            </div>
+
+                            <!-- Cooldowns Box Widget -->
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder p-2.5 rounded-xl shadow-sm text-xs w-44">
+                                <div class="flex items-center justify-between border-b border-noirBorder pb-1 mb-1 text-noirTextMuted text-[11px]">
+                                    <span class="flex items-center space-x-1">
+                                        <i data-lucide="clock" class="w-3 h-3"></i>
+                                        <span>Cooldowns</span>
+                                    </span>
+                                </div>
+                                <div class="space-y-1 font-mono text-[10px]">
+                                    <div class="flex justify-between text-noirText">
+                                        <span>Ender Pearl</span>
+                                        <span class="text-noirTextMuted">0:01</span>
+                                    </div>
+                                    <div class="flex justify-between text-noirText">
+                                        <span>Golden Apple</span>
+                                        <span class="text-noirTextMuted">0:09</span>
+                                    </div>
+                                    <div class="flex justify-between text-noirText">
+                                        <span>Chorus</span>
+                                        <span class="text-noirTextMuted">0:01</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Waypoints Widget -->
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder p-2.5 rounded-xl shadow-sm text-xs w-44">
+                                <div class="flex items-center justify-between border-b border-noirBorder pb-1 mb-1 text-noirTextMuted text-[11px]">
+                                    <span class="flex items-center space-x-1">
+                                        <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                        <span>Waypoints</span>
+                                    </span>
+                                </div>
+                                <div class="space-y-1 font-mono text-[10px]">
+                                    <div class="flex justify-between text-noirText">
+                                        <span>Spawn</span>
+                                        <span class="text-noirTextMuted">812m</span>
+                                    </div>
+                                    <div class="flex justify-between text-noirText">
+                                        <span>SystemHome</span>
+                                        <span class="text-noirTextMuted">10m</span>
+                                    </div>
+                                    <div class="flex justify-between text-noirText">
+                                        <span>Arena</span>
+                                        <span class="text-noirTextMuted">82843m</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card text matching screenshot -->
+                        <div>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="font-mono text-xs text-noirTextMuted">02</span>
+                                <h3 class="text-lg font-bold text-noirText tracking-tight">HUD элементы</h3>
+                            </div>
+                            <p class="text-sm text-noirTextMuted mt-2 leading-relaxed">
+                                Настраиваемые экранные виджеты — биндинги, зелья, путевые точки, кулдауны и многое другое.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- CARD 03: Веб-Конфиги -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorder p-6 flex flex-col justify-between overflow-hidden relative group hover:border-noirBorderStrong transition-all duration-300 shadow-sm">
+                        <!-- Config mockup matching screenshot -->
+                        <div class="h-64 rounded-xl bg-neutral-100 dark:bg-black/60 border border-noirBorder relative p-4 overflow-hidden mb-6 flex items-center justify-center">
+                            <div class="w-full max-w-xs bg-white dark:bg-[#161616] border border-noirBorder rounded-xl p-4 shadow-xl space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <i data-lucide="lock" class="w-3.5 h-3.5 text-noirTextMuted"></i>
+                                        <span class="font-bold text-xs text-noirText">Legit_04</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-[10px] text-noirTextMuted font-mono">Нет</span>
+                                        <i data-lucide="star" class="w-3.5 h-3.5 text-noirTextMuted"></i>
+                                        <div class="w-6 h-3.5 bg-black dark:bg-white rounded-full flex items-center justify-end px-0.5">
+                                            <div class="w-2.5 h-2.5 bg-white dark:bg-black rounded-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-neutral-50 dark:bg-[#1f1f1f] p-2.5 rounded-lg border border-noirBorder">
+                                    <div class="text-[11px] font-semibold text-noirText">Приватный конфиг</div>
+                                    <p class="text-[10px] text-noirTextMuted mt-0.5 leading-snug">
+                                        Сделает ваш конфиг приватным. Пользователи, использующие данный конфиг, не смогут им поделиться.
+                                    </p>
+                                </div>
+
+                                <div class="pt-1 flex items-center justify-between text-[11px]">
+                                    <span class="text-noirTextMuted">Генерация ключа</span>
+                                    <span class="font-mono text-[10px] text-noirText underline cursor-pointer hover:opacity-80" onclick="showToast('Сгенерирован ключ конфига CFG-280526')">Сгенерировать</span>
+                                </div>
+
+                                <div class="pt-1 border-t border-noirBorder flex items-center justify-between text-[10px] text-noirTextMuted font-mono">
+                                    <span>Создан: 28.05.2026</span>
+                                    <span>ID: #9924-A</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card text matching screenshot -->
+                        <div>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="font-mono text-xs text-noirTextMuted">03</span>
+                                <h3 class="text-lg font-bold text-noirText tracking-tight">Веб-Конфиги</h3>
+                            </div>
+                            <p class="text-sm text-noirTextMuted mt-2 leading-relaxed">
+                                Настраивайте конфигурации прямо на сайте, делитесь конфигами с другими игроками, создавайте приватные конфиги.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- CARD 04: Элементы -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorder p-6 flex flex-col justify-between overflow-hidden relative group hover:border-noirBorderStrong transition-all duration-300 shadow-sm">
+                        <!-- HUD element preview matching screenshot -->
+                        <div class="h-64 rounded-xl bg-neutral-100 dark:bg-black/60 border border-noirBorder relative p-4 overflow-hidden mb-6 flex flex-col justify-center space-y-2">
+                            
+                            <!-- Notification pill -->
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder px-3 py-2 rounded-xl text-xs flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-noirText">Игрок использовал <span class="font-semibold underline decoration-neutral-400">Зач. Золотое яблоко</span></span>
+                                </div>
+                                <span class="text-noirTextMuted font-mono text-[10px]">Включено</span>
+                            </div>
+
+                            <!-- Target Healthbar Widget -->
+                            <div class="bg-white dark:bg-[#181818] border border-noirBorder p-2.5 rounded-xl flex items-center justify-between">
+                                <div class="flex items-center space-x-2 text-xs">
+                                    <div class="w-5 h-5 rounded bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-[10px]">T</div>
+                                    <span class="font-medium text-noirText">Tlauncher947100</span>
+                                    <span class="text-rose-500 font-mono text-[11px] font-bold">4 HP</span>
+                                </div>
+                                <div class="flex items-center space-x-2 text-[10px] text-noirTextMuted font-mono">
+                                    <span>144 FPS</span>
+                                    <span>14 MS</span>
+                                </div>
+                            </div>
+
+                            <!-- Coordinates bar -->
+                            <div class="flex items-center space-x-2 overflow-x-auto text-[10px] font-mono text-noirText">
+                                <span class="bg-white dark:bg-[#181818] border border-noirBorder px-2.5 py-1 rounded-lg">X -146 Y 80 Z 412</span>
+                                <span class="bg-white dark:bg-[#181818] border border-noirBorder px-2.5 py-1 rounded-lg">Waypoint 812m</span>
+                                <span class="bg-white dark:bg-[#181818] border border-noirBorder px-2.5 py-1 rounded-lg">x5 x48 MLB5</span>
+                            </div>
+                        </div>
+
+                        <!-- Card text matching screenshot -->
+                        <div>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="font-mono text-xs text-noirTextMuted">04</span>
+                                <h3 class="text-lg font-bold text-noirText tracking-tight">Элементы</h3>
+                            </div>
+                            <p class="text-sm text-noirTextMuted mt-2 leading-relaxed">
+                                Огромное количество различных элементов, уведомлений, списков информации, настройте все под себя.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- SCRIPTING ENGINE (main.lua) -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-8 py-16 w-full border-t border-noirBorder">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    <div class="lg:col-span-5 space-y-4">
+                        <span class="text-xs uppercase font-mono text-noirTextMuted tracking-widest">Script Engine</span>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-noirText">
+                            Встроенный движок скриптов main.lua
+                        </h2>
+                        <p class="text-sm text-noirTextMuted leading-relaxed">
+                            Полный доступ к внутреннему API клиента. Написание кастомных макросов, логики боя и динамического HUD через единый файл конфигурации <code class="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-noirText font-mono">main.lua</code> с поддержкой горячей перезагрузки на лету.
+                        </p>
+                        <div class="pt-2 space-y-2 text-xs text-noirTextMuted font-mono">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-noirText"></i>
+                                <span>Асинхронный событийный цикл EventBus</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="check" class="w-3.5 h-3.5 text-noirText"></i>
+                                <span>Безопасная изоляция без прямого падения JVM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Code block for main.lua -->
+                    <div class="lg:col-span-7 bg-noirCard rounded-2xl border border-noirBorder overflow-hidden shadow-sm">
+                        <div class="bg-neutral-100 dark:bg-black px-4 py-3 border-b border-noirBorder flex items-center justify-between text-xs font-mono">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span class="font-bold text-noirText">main.lua</span>
+                            </div>
+                            <button onclick="testRunScript()" class="px-3 py-1 rounded bg-black dark:bg-white text-white dark:text-black font-semibold text-[11px] uppercase hover:opacity-80 transition">
+                                Запустить main.lua
+                            </button>
+                        </div>
+                        <div class="p-4 bg-neutral-50 dark:bg-[#0c0c0c] font-mono text-xs overflow-x-auto text-noirText">
+                            <pre class="leading-relaxed"><code><span class="text-neutral-400">-- LunaClient Core Controller [main.lua]</span>
+<span class="font-bold">local</span> Luna = require(<span class="text-neutral-400">"LunaCore"</span>)
+
+Luna.onInit(<span class="font-bold">function</span>()
+    Luna.Logger.info(<span class="text-neutral-400">"LunaClient v1.0 main.lua successfully linked."</span>)
+<span class="font-bold">end</span>)
+
+Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span class="font-bold">function</span>(packet)
+    <span class="font-bold">if</span> packet:getId() == <span class="text-neutral-400">"EntityVelocity"</span> <span class="font-bold">then</span>
+        <span class="font-bold">return</span> packet:cancel() <span class="text-neutral-400">-- Safe velocity modifier</span>
+    <span class="font-bold">end</span>
+<span class="font-bold">end</span>)</code></pre>
+                        </div>
+                        <div id="script-status-box" class="bg-neutral-100 dark:bg-black px-4 py-2.5 border-t border-noirBorder text-[11px] font-mono text-noirTextMuted flex items-center justify-between">
+                            <span id="script-status-text">Статус: Готов к выполнению</span>
+                            <span>LuaJIT 2.1</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRICING SECTION -->
+            <section id="pricing-section" class="max-w-7xl mx-auto px-4 sm:px-8 py-20 w-full border-t border-noirBorder">
+                <div class="text-center max-w-2xl mx-auto space-y-3 mb-14">
+                    <span class="text-xs uppercase font-mono text-noirTextMuted tracking-widest">Доступ к системе</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-noirText">Тарифные планы</h2>
+                    <p class="text-sm text-noirTextMuted">
+                        Выберите период активации. Моментальная привязка лицензии к вашему UID сразу после оплаты.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    <!-- Plan: 1 Month -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorder p-7 flex flex-col justify-between hover:border-noirBorderStrong transition-all">
+                        <div class="space-y-4">
+                            <div class="text-xs font-mono uppercase tracking-widest text-noirTextMuted">Стартовый</div>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="text-4xl font-black text-noirText">150</span>
+                                <span class="text-lg text-noirTextMuted font-medium">руб.</span>
+                                <span class="text-xs text-noirTextMuted">/ 1 месяц</span>
+                            </div>
+                            <p class="text-xs text-noirTextMuted leading-relaxed">
+                                Идеально для ознакомления и разовых турниров. Полная функциональность без ограничений по режимам.
+                            </p>
+                            <div class="space-y-2.5 pt-3 border-t border-noirBorder text-xs text-noirText font-medium">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Все версии 1.21.11 / 26.2</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Облачные конфиги</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Поддержка main.lua</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="buyPlan('1 месяц (150 руб.)')" class="mt-8 w-full py-2.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs font-semibold uppercase tracking-wider text-noirText transition">
+                            Приобрести
+                        </button>
+                    </div>
+
+                    <!-- Plan: 6 Months -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorderStrong p-7 flex flex-col justify-between shadow-lg relative">
+                        <div class="absolute -top-3 right-6 bg-black dark:bg-white text-white dark:text-black text-[10px] font-mono px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                            Популярно
+                        </div>
+                        <div class="space-y-4">
+                            <div class="text-xs font-mono uppercase tracking-widest text-noirTextMuted">Оптимальный</div>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="text-4xl font-black text-noirText">300</span>
+                                <span class="text-lg text-noirTextMuted font-medium">руб.</span>
+                                <span class="text-xs text-noirTextMuted">/ полгода</span>
+                            </div>
+                            <p class="text-xs text-noirTextMuted leading-relaxed">
+                                6 месяцев непрерывного доступа со скидкой 50% в сравнении с помесячной оплатой.
+                            </p>
+                            <div class="space-y-2.5 pt-3 border-t border-noirBorder text-xs text-noirText font-medium">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Все возможности клиента</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>1 бесплатный сброс HWID</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Доступ к приватным скриптам</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="buyPlan('6 месяцев (300 руб.)')" class="mt-8 w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-semibold uppercase tracking-wider hover:opacity-90 transition">
+                            Приобрести
+                        </button>
+                    </div>
+
+                    <!-- Plan: Lifetime -->
+                    <div class="bg-noirCard rounded-2xl border border-noirBorder p-7 flex flex-col justify-between hover:border-noirBorderStrong transition-all">
+                        <div class="space-y-4">
+                            <div class="text-xs font-mono uppercase tracking-widest text-noirTextMuted">Навсегда</div>
+                            <div class="flex items-baseline space-x-1">
+                                <span class="text-4xl font-black text-noirText">400</span>
+                                <span class="text-lg text-noirTextMuted font-medium">руб.</span>
+                                <span class="text-xs text-noirTextMuted">/ безлимит</span>
+                            </div>
+                            <p class="text-xs text-noirTextMuted leading-relaxed">
+                                Пожизненная лицензия (Lifetime) без дополнительных списаний с гарантией всех будущих апдейтов.
+                            </p>
+                            <div class="space-y-2.5 pt-3 border-t border-noirBorder text-xs text-noirText font-medium">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Вечный доступ ко всем билдам</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Сброс HWID раз в месяц</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                    <span>Приоритет в очереди поддержки</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="buyPlan('Навсегда (400 руб.)')" class="mt-8 w-full py-2.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs font-semibold uppercase tracking-wider text-noirText transition">
+                            Приобрести
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+
+        <!-- VIEW 2: DEDICATED WEB-CONFIGS PAGE (SPA ROUTE) -->
+        <main id="view-webconfigs" class="hidden flex-grow flex flex-col relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-12 w-full">
+            <div class="flex items-center justify-between border-b border-noirBorder pb-6 mb-10">
+                <div class="space-y-1">
+                    <button onclick="navigateTab('main')" class="text-xs text-noirTextMuted hover:text-noirText font-mono flex items-center space-x-1 mb-2">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        <span>Назад на главную</span>
+                    </button>
+                    <h1 class="text-3xl font-extrabold text-noirText">Облачные конфигурации</h1>
+                    <p class="text-xs text-noirTextMuted">Персональное хранилище и публичная галерея конфигов LunaClient</p>
+                </div>
+                <button onclick="showToast('Создание нового конфига...');" class="px-4 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-wider hover:opacity-90 transition">
+                    + Создать конфиг
+                </button>
+            </div>
+
+            <!-- Empty State Display -->
+            <div class="bg-noirCard border border-dashed border-noirBorder rounded-3xl p-16 flex flex-col items-center justify-center text-center space-y-4 my-auto">
+                <div class="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-noirBorder flex items-center justify-center text-noirTextMuted">
+                    <i data-lucide="folder-code" class="w-8 h-8"></i>
+                </div>
+                <div class="space-y-1">
+                    <h3 class="text-base font-bold text-noirText">Список конфигов пуст</h3>
+                    <p class="text-xs text-noirTextMuted max-w-sm">
+                        В данный момент нет сохраненных облачных конфигураций или идет синхронизация с игровым сервером.
+                    </p>
+                </div>
+                <div class="flex items-center space-x-3 pt-2">
+                    <button onclick="navigateTab('main')" class="px-4 py-2 rounded-lg border border-noirBorder text-xs text-noirText hover:border-noirBorderStrong transition">
+                        Вернуться на главную
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- VIEW 3: PERSONAL CABINET & ADMIN PANEL (SPA ROUTE) -->
+        <main id="view-cabinet" class="hidden flex-grow flex flex-col relative z-10 max-w-7xl mx-auto px-4 sm:px-8 py-12 w-full">
+            <div class="flex items-center justify-between border-b border-noirBorder pb-6 mb-8">
+                <div>
+                    <button onclick="navigateTab('main')" class="text-xs text-noirTextMuted hover:text-noirText font-mono flex items-center space-x-1 mb-2">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                        <span>На главную</span>
+                    </button>
+                    <h1 class="text-3xl font-black text-noirText">Личный кабинет</h1>
+                </div>
+                <button onclick="logoutUser()" class="px-3.5 py-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition">
+                    Выйти из аккаунта
+                </button>
+            </div>
+
+            <!-- User Information Card -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-noirCard border border-noirBorder p-5 rounded-2xl">
+                    <span class="text-[11px] font-mono text-noirTextMuted uppercase">Пользователь</span>
+                    <div id="cab-username" class="text-lg font-bold text-noirText mt-1">TOmoro</div>
+                    <div class="text-[11px] text-emerald-500 font-mono mt-0.5">● Активен</div>
+                </div>
+
+                <div class="bg-noirCard border border-noirBorder p-5 rounded-2xl">
+                    <span class="text-[11px] font-mono text-noirTextMuted uppercase">Ваш UID</span>
+                    <div id="cab-uid" class="text-lg font-bold font-mono text-noirText mt-1">#0001</div>
+                    <div class="text-[11px] text-noirTextMuted font-mono mt-0.5">ID системы</div>
+                </div>
+
+                <div class="bg-noirCard border border-noirBorder p-5 rounded-2xl">
+                    <span class="text-[11px] font-mono text-noirTextMuted uppercase">Текущая роль</span>
+                    <div id="cab-role" class="text-lg font-bold text-noirText mt-1 flex items-center space-x-1.5">
+                        <span id="cab-role-badge">Admin</span>
+                    </div>
+                    <div class="text-[11px] text-noirTextMuted font-mono mt-0.5">Привилегия</div>
+                </div>
+
+                <div class="bg-noirCard border border-noirBorder p-5 rounded-2xl">
+                    <span class="text-[11px] font-mono text-noirTextMuted uppercase">Подписка</span>
+                    <div id="cab-sub" class="text-lg font-bold text-noirText mt-1">Lifetime</div>
+                    <div class="text-[11px] text-noirTextMuted font-mono mt-0.5">Бессрочный доступ</div>
+                </div>
+            </div>
+
+            <!-- Hardware ID & Security Info -->
+            <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl mb-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-noirText">Привязка оборудования (HWID)</h3>
+                        <p class="text-xs text-noirTextMuted mt-0.5 font-mono">
+                            HWID Hash: <span id="cab-hwid-text">E4F9-98A1-440B-CC02-LUNA</span>
+                        </p>
+                    </div>
+                    <button onclick="requestUserHwidReset()" class="px-4 py-2 rounded-xl border border-noirBorder text-xs text-noirText hover:border-noirBorderStrong font-medium transition self-start sm:self-auto">
+                        Запросить сброс HWID
+                    </button>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL SECTION (Visible only for TOmoro or users with Admin role) -->
+            <div id="admin-panel-section" class="border-t border-noirBorder pt-8 mt-2 space-y-6">
+                <div class="flex items-center space-x-3">
+                    <div class="px-2.5 py-1 rounded bg-black dark:bg-white text-white dark:text-black font-mono text-xs font-bold uppercase">
+                        ROOT ADMIN
+                    </div>
+                    <h2 class="text-xl font-extrabold text-noirText">Панель управления администратора</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    <!-- Admin Tool 1: Reset HWID by UID -->
+                    <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center space-x-2 text-noirText">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            <h3 class="text-sm font-bold">Сброс HWID по UID</h3>
+                        </div>
+                        <p class="text-xs text-noirTextMuted">Отвязать старое железо пользователя по его номеру в системе.</p>
+                        <input id="admin-hwid-uid" type="text" placeholder="Введите UID (например, #0042)" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3 py-2 text-xs text-noirText focus:outline-none font-mono">
+                        <button onclick="adminResetHwid()" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase hover:opacity-90 transition">
+                            Сбросить HWID
+                        </button>
+                    </div>
+
+                    <!-- Admin Tool 2: Assign Role by UID -->
+                    <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center space-x-2 text-noirText">
+                            <i data-lucide="shield" class="w-4 h-4"></i>
+                            <h3 class="text-sm font-bold">Выдача ролей по UID</h3>
+                        </div>
+                        <p class="text-xs text-noirTextMuted">Назначить роль пользователю (Media, Admin, Member).</p>
+                        <input id="admin-role-uid" type="text" placeholder="Введите UID (например, #0042)" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3 py-2 text-xs text-noirText focus:outline-none font-mono">
+                        <select id="admin-role-select" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3 py-2 text-xs text-noirText focus:outline-none font-mono">
+                            <option value="Media">Роль: Media</option>
+                            <option value="Admin">Роль: Admin</option>
+                            <option value="Member">Роль: Member</option>
+                        </select>
+                        <button onclick="adminAssignRole()" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase hover:opacity-90 transition">
+                            Назначить роль
+                        </button>
+                    </div>
+
+                    <!-- Admin Tool 3: Key Generator -->
+                    <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center space-x-2 text-noirText">
+                            <i data-lucide="key" class="w-4 h-4"></i>
+                            <h3 class="text-sm font-bold">Генератор ключей</h3>
+                        </div>
+                        <p class="text-xs text-noirTextMuted">Создать лицензионный ключ для активации клиентом.</p>
+                        <select id="admin-key-plan" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3 py-2 text-xs text-noirText focus:outline-none font-mono">
+                            <option value="1 месяц">1 месяц (150 руб.)</option>
+                            <option value="6 месяцев">6 месяцев (300 руб.)</option>
+                            <option value="Lifetime">Навсегда (400 руб.)</option>
+                        </select>
+                        <button onclick="adminGenerateKey()" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase hover:opacity-90 transition">
+                            Сгенерировать ключ
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Admin Action Logs & Generated Keys -->
+                <div class="bg-noirCard border border-noirBorder p-5 rounded-2xl space-y-3">
+                    <span class="text-xs font-mono font-bold uppercase text-noirTextMuted">Журнал созданных ключей и действий</span>
+                    <div id="admin-logs-container" class="font-mono text-xs space-y-2 max-h-44 overflow-y-auto text-noirText">
+                        <div class="text-neutral-500">[SYSTEM]: Авторизован администратор TOmoro. Доступ открыт.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="w-full border-t border-noirBorder py-12 px-4 sm:px-8 bg-neutral-100/50 dark:bg-black/50 text-xs text-noirTextMuted relative z-10 transition-colors">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div>
+                    <span class="text-noirText font-bold">LunaClient</span> — Архитектура доминирования. Все права защищены.
+                </div>
+                <div class="flex items-center space-x-6">
+                    <a href="https://t.me/LunaINC" target="_blank" rel="noopener noreferrer" class="hover:text-noirText transition flex items-center space-x-1.5">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        <span>Telegram @LunaINC</span>
+                    </a>
+                    <button onclick="toggleAgreementModal()" class="hover:text-noirText underline transition">
+                        Пользовательское соглашение
+                    </button>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- AUTHENTICATION / REGISTRATION MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-noirCard rounded-3xl w-full max-w-sm p-6 sm:p-8 border border-noirBorder shadow-2xl relative space-y-6">
+            <button onclick="closeAuthModal()" class="absolute top-5 right-5 text-noirTextMuted hover:text-noirText">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Modal Tab switch (Login / Register) -->
+            <div class="flex border-b border-noirBorder text-xs font-bold uppercase">
+                <button id="tab-btn-login" onclick="switchAuthTab('login')" class="pb-2 border-b-2 border-black dark:border-white text-noirText flex-1">
+                    Вход
+                </button>
+                <button id="tab-btn-reg" onclick="switchAuthTab('register')" class="pb-2 border-b-2 border-transparent text-noirTextMuted flex-1">
+                    Регистрация
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Логин / Никнейм</label>
+                    <input id="login-username" type="text" required placeholder="TOmoro" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Пароль</label>
+                    <input id="login-password" type="password" required placeholder="GENSIS2323" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div class="text-[10px] text-neutral-400 font-mono">
+                    Подсказка для теста админки: <span class="text-noirText font-bold">TOmoro</span> / <span class="text-noirText font-bold">GENSIS2323</span>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition">
+                    Войти в аккаунт
+                </button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-4">
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Желаемый никнейм</label>
+                    <input id="reg-username" type="text" required placeholder="Player_X" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Придумайте пароль</label>
+                    <input id="reg-password" type="password" required placeholder="••••••••" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div class="text-[10px] text-noirTextMuted font-mono leading-tight">
+                    При регистрации система автоматически закрепит за вами порядковый уникальный UID в базе данных.
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition">
+                    Зарегистрироваться
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- USER AGREEMENT MODAL (ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ) -->
+    <div id="agreement-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-noirCard rounded-3xl w-full max-w-xl p-6 sm:p-8 border border-noirBorder shadow-2xl relative space-y-5 max-h-[85vh] flex flex-col">
+            <button onclick="toggleAgreementModal()" class="absolute top-5 right-5 text-noirTextMuted hover:text-noirText">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="space-y-1">
+                <h3 class="text-xl font-extrabold text-noirText">Пользовательское соглашение</h3>
+                <p class="text-xs text-noirTextMuted font-mono">LunaClient Platform License & Security Agreement</p>
+            </div>
+            <div class="overflow-y-auto space-y-4 text-xs text-noirTextMuted leading-relaxed pr-2 font-normal">
+                <p>
+                    1. <strong>Общие положения:</strong> LunaClient представляет собой модифицированное окружение для Minecraft версии 1.21.11 / 26.2, предоставляемое пользователю "как есть" (AS IS) исключительно в исследовательских целях.
+                </p>
+                <p>
+                    2. <strong>Безопасность и HWID:</strong> Каждая подписка привязана к индивидуальному аппаратному ключу (Hardware ID) и уникальному идентификатору (UID). Передача аккаунта третьим лицам или попытка взлома клиента ведет к аннулированию лицензии без права возврата средств.
+                </p>
+                <p>
+                    3. <strong>Политика сброса оборудования:</strong> Сброс HWID доступен через панель пользователя или по прямому запросу к службе поддержки Telegram @LunaINC. Администрация оставляет за собой право запросить верификацию владения аккаунтом.
+                </p>
+                <p>
+                    4. <strong>Ответственность:</strong> Пользователь несет персональную ответственность за соблюдение правил серверов, на которых используется LunaClient. Разработчики не несут ответственности за блокировки на сторонних серверах.
+                </p>
+            </div>
+            <div class="pt-3 border-t border-noirBorder flex justify-end">
+                <button onclick="toggleAgreementModal()" class="px-5 py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wider hover:opacity-90 transition">
+                    Принимаю условия
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[60] transform translate-y-28 opacity-0 transition-all duration-300 bg-white dark:bg-neutral-900 border border-noirBorder text-noirText px-4 py-3 rounded-2xl flex items-center space-x-3 shadow-2xl text-xs font-medium">
+        <span class="w-2 h-2 rounded-full bg-black dark:bg-white flex-shrink-0"></span>
+        <span id="toast-message">Оповещение</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // THEME HANDLING (Light / Dark)
+        function setTheme(theme) {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+            } else {
+                html.classList.remove('dark');
+                if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+            }
+            lucide.createIcons();
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            setTheme(isDark ? 'light' : 'dark');
+        }
+
+        // INTRO SEQUENCE
+        const introScreen = document.getElementById('intro-screen');
+        const mainContent = document.getElementById('main-content');
+        const introSubtitle = document.getElementById('intro-subtitle');
+
+        function endIntro() {
+            introScreen.style.opacity = '0';
+            introScreen.style.pointerEvents = 'none';
+            mainContent.style.opacity = '1';
+            setTimeout(() => {
+                introScreen.classList.add('hidden');
+            }, 1000);
+        }
+
+        function skipIntro() {
+            endIntro();
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (introSubtitle) introSubtitle.style.opacity = '1';
+            }, 1100);
+
+            setTimeout(() => {
+                endIntro();
+            }, 2700);
+        });
+
+        // NOTIFICATIONS
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            toastMessage.innerText = text;
+            toast.classList.remove('translate-y-28', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-28', 'opacity-0');
+            }, 2600);
+        }
+
+        // USER STATE (In-Memory)
+        let currentUser = null;
+        let lastAssignedUid = 1042;
+
+        // Navigation between main, webconfigs, and cabinet
+        function navigateTab(tabName) {
+            const viewMain = document.getElementById('view-main');
+            const viewConfigs = document.getElementById('view-webconfigs');
+            const viewCabinet = document.getElementById('view-cabinet');
+
+            viewMain.classList.add('hidden');
+            viewConfigs.classList.add('hidden');
+            viewCabinet.classList.add('hidden');
+
+            if (tabName === 'webconfigs') {
+                viewConfigs.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (tabName === 'cabinet') {
+                viewCabinet.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                viewMain.classList.remove('hidden');
+            }
+        }
+
+        // ACCOUNT MODAL & CABINET LOGIC
+        function handleAccountButtonClick() {
+            if (currentUser) {
+                navigateTab('cabinet');
+            } else {
+                openAuthModal();
+            }
+        }
+
+        function openAuthModal() {
+            document.getElementById('auth-modal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.add('hidden');
+        }
+
+        function switchAuthTab(type) {
+            const loginBtn = document.getElementById('tab-btn-login');
+            const regBtn = document.getElementById('tab-btn-reg');
+            const formLogin = document.getElementById('form-login');
+            const formRegister = document.getElementById('form-register');
+
+            if (type === 'login') {
+                loginBtn.className = 'pb-2 border-b-2 border-black dark:border-white text-noirText flex-1 font-bold';
+                regBtn.className = 'pb-2 border-b-2 border-transparent text-noirTextMuted flex-1 font-bold';
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                regBtn.className = 'pb-2 border-b-2 border-black dark:border-white text-noirText flex-1 font-bold';
+                loginBtn.className = 'pb-2 border-b-2 border-transparent text-noirTextMuted flex-1 font-bold';
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        }
+
+        function handleLoginSubmit(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value.trim();
+
+            if (usernameInput === 'TOmoro' && passwordInput === 'GENSIS2323') {
+                // Preset Administrator Account
+                currentUser = {
+                    username: 'TOmoro',
+                    uid: '#0001',
+                    role: 'Admin',
+                    subscription: 'Lifetime Unlimited',
+                    hwid: 'HWID-TOMORO-ROOT-001'
+                };
+                showToast("Добро пожаловать, Администратор TOmoro!");
+            } else {
+                // Standard User Login
+                lastAssignedUid++;
+                currentUser = {
+                    username: usernameInput,
+                    uid: '#' + lastAssignedUid,
+                    role: 'Member',
+                    subscription: '1 месяц',
+                    hwid: 'HWID-' + Math.random().toString(36).substring(2, 9).toUpperCase()
+                };
+                showToast(`Вход выполнен! UID: ${currentUser.uid}`);
+            }
+
+            updateCabinetUI();
+            closeAuthModal();
+            navigateTab('cabinet');
+        }
+
+        function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('reg-username').value.trim();
+            lastAssignedUid++;
+            const generatedUid = '#' + lastAssignedUid;
+
+            currentUser = {
+                username: usernameInput,
+                uid: generatedUid,
+                role: 'Member',
+                subscription: 'Демо-период (24ч)',
+                hwid: 'HWID-' + Math.random().toString(36).substring(2, 9).toUpperCase()
+            };
+
+            showToast(`Успешная регистрация! Ваш UID: ${generatedUid}`);
+            updateCabinetUI();
+            closeAuthModal();
+            navigateTab('cabinet');
+        }
+
+        function updateCabinetUI() {
+            if (!currentUser) return;
+            document.getElementById('cab-username').innerText = currentUser.username;
+            document.getElementById('cab-uid').innerText = currentUser.uid;
+            document.getElementById('cab-role-badge').innerText = currentUser.role;
+            document.getElementById('cab-sub').innerText = currentUser.subscription;
+            document.getElementById('cab-hwid-text').innerText = currentUser.hwid;
+            document.getElementById('account-btn-text').innerText = currentUser.username;
+
+            // Show or hide admin panel based on role
+            const adminSection = document.getElementById('admin-panel-section');
+            if (currentUser.role === 'Admin') {
+                adminSection.classList.remove('hidden');
+            } else {
+                adminSection.classList.add('hidden');
+            }
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            document.getElementById('account-btn-text').innerText = 'Личный кабинет';
+            showToast("Вы вышли из учетной записи.");
+            navigateTab('main');
+        }
+
+        function requestUserHwidReset() {
+            showToast("Запрос на сброс HWID отправлен администратору.");
+        }
+
+        // ADMIN TOOLS LOGIC
+        function addAdminLog(msg) {
+            const logsContainer = document.getElementById('admin-logs-container');
+            const div = document.createElement('div');
+            div.className = "text-xs font-mono text-noirText";
+            div.innerHTML = `<span class="text-neutral-500">[${new Date().toLocaleTimeString()}]:</span> ${msg}`;
+            logsContainer.prepend(div);
+        }
+
+        function adminResetHwid() {
+            const uidInput = document.getElementById('admin-hwid-uid').value.trim();
+            if (!uidInput) {
+                showToast("Укажите UID пользователя!");
+                return;
+            }
+            if (currentUser && currentUser.uid === uidInput) {
+                currentUser.hwid = 'HWID-RESET-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                document.getElementById('cab-hwid-text').innerText = currentUser.hwid;
+            }
+            addAdminLog(`Сброшен HWID для пользователя с UID <strong class="text-emerald-500">${uidInput}</strong>`);
+            showToast(`HWID для ${uidInput} успешно сброшен!`);
+            document.getElementById('admin-hwid-uid').value = '';
+        }
+
+        function adminAssignRole() {
+            const uidInput = document.getElementById('admin-role-uid').value.trim();
+            const roleSelect = document.getElementById('admin-role-select').value;
+            if (!uidInput) {
+                showToast("Укажите UID пользователя!");
+                return;
+            }
+            if (currentUser && currentUser.uid === uidInput) {
+                currentUser.role = roleSelect;
+                updateCabinetUI();
+            }
+            addAdminLog(`Пользователю <strong class="text-emerald-500">${uidInput}</strong> присвоена роль: <strong>${roleSelect}</strong>`);
+            showToast(`Роль ${roleSelect} присвоена ${uidInput}`);
+            document.getElementById('admin-role-uid').value = '';
+        }
+
+        function adminGenerateKey() {
+            const plan = document.getElementById('admin-key-plan').value;
+            const keyPart = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+            const key = `LUNA-${keyPart()}-${keyPart()}-${keyPart()}`;
+            addAdminLog(`Ключ (<span class="text-neutral-400">${plan}</span>): <strong class="text-emerald-400 cursor-pointer" onclick="copyKey('${key}')">${key}</strong> (клик для копирования)`);
+            showToast(`Сгенерирован ключ: ${key}`);
+        }
+
+        function copyKey(k) {
+            const dummy = document.createElement("input");
+            document.body.appendChild(dummy);
+            dummy.value = k;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+            showToast(`Ключ ${k} скопирован в буфер!`);
+        }
+
+        // USER AGREEMENT MODAL
+        function toggleAgreementModal() {
+            const modal = document.getElementById('agreement-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        // TARIFF PURCHASE ACTION
+        function buyPlan(planName) {
+            showToast(`Выбран тариф ${planName}. Переход в Telegram @LunaINC`);
+            setTimeout(() => {
+                window.open('https://t.me/LunaINC', '_blank');
+            }, 800);
+        }
+
+        // SCRIPT SIMULATION
+        function testRunScript() {
+            const statusText = document.getElementById('script-status-text');
+            statusText.innerText = "main.lua скомпилирован и внедрен в память.";
+            statusText.classList.add('text-emerald-500');
+            showToast("Скрипт main.lua успешно запущен!");
+        }
+    </script>
+</body>
+</html>

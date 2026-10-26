@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LunaClient — Архитектура доминирования</title>
+    <meta name="description" content="LunaClient — Приватный клиент нового поколения для Minecraft 1.21.8. Нейросетевая точность, FastMath 240+ FPS и бескомпромиссный контроль.">
+    <meta name="theme-color" content="#070707">
+    <!-- OpenGraph / Social Embeds for Discord, Telegram, VK, Twitter -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="LunaClient">
+    <meta property="og:title" content="LunaClient — Архитектура доминирования">
+    <meta property="og:description" content="Приватный клиент нового поколения для Minecraft 1.21.8. Нейросетевой анализ, FastMath 240+ FPS, мгновенный отклик и абсолютный контроль.">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="LunaClient — Архитектура доминирования">
+    <meta property="twitter:description" content="Приватный клиент нового поколения для Minecraft 1.21.8. Нейросетевой анализ, FastMath 240+ FPS, мгновенный отклик и абсолютный контроль.">
+    <!-- SVG Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='25' fill='%23000'/><text x='50' y='68' font-family='sans-serif' font-size='56' font-weight='900' fill='%23fff' text-anchor='middle'>L</text></svg>">
     <!-- Tailwind CSS CDN with dark mode configured via class -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -907,6 +919,12 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
 
+            <!-- Modal Error Banner -->
+            <div id="auth-error-box" class="hidden text-xs font-mono p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-start space-x-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-400"></i>
+                <span id="auth-error-text">Ошибка</span>
+            </div>
+
             <!-- Modal Tab switch (Login / Register) -->
             <div class="flex border-b border-noirBorder text-xs font-bold uppercase">
                 <button id="tab-btn-login" onclick="switchAuthTab('login')" class="pb-2 border-b-2 border-black dark:border-white text-noirText flex-1 font-bold">
@@ -921,14 +939,11 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Логин / Никнейм</label>
-                    <input id="login-username" type="text" required placeholder="TOmoro" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                    <input id="login-username" type="text" required placeholder="Ваш никнейм" autocomplete="username" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
                 </div>
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Пароль</label>
-                    <input id="login-password" type="password" required placeholder="GENSIS2323" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
-                </div>
-                <div class="text-[10px] text-neutral-400 font-mono">
-                    Админ-аккаунты: <span class="text-noirText font-bold">TOmoro</span> / <span class="text-noirText font-bold">GENSIS2323</span> или <span class="text-noirText font-bold">admin</span> / <span class="text-noirText font-bold">admin123</span>
+                    <input id="login-password" type="password" required placeholder="••••••••" autocomplete="current-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
                 </div>
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition shadow-sm">
                     Войти в аккаунт
@@ -936,17 +951,22 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             </form>
 
             <!-- Register Form -->
-            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-4">
+            <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3.5">
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Желаемый никнейм</label>
-                    <input id="reg-username" type="text" required placeholder="Player_X" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                    <input id="reg-username" type="text" required placeholder="От 3 до 20 латинских символов" autocomplete="username" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong font-mono">
+                    <span class="text-[10px] text-neutral-500 font-mono mt-0.5 block">Латиница, цифры и символ подчеркивания _</span>
                 </div>
                 <div>
                     <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Придумайте пароль</label>
-                    <input id="reg-password" type="password" required placeholder="••••••••" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2.5 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                    <input id="reg-password" type="password" required placeholder="Минимум 6 символов" autocomplete="new-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Повторите пароль</label>
+                    <input id="reg-password-confirm" type="password" required placeholder="Повторите пароль" autocomplete="new-password" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
                 </div>
                 <div class="text-[10px] text-noirTextMuted font-mono leading-tight">
-                    При регистрации система автоматически закрепит за вами уникальный порядковый UID в базе данных.
+                    При регистрации система закрепит за вами уникальный числовой UID в базе данных.
                 </div>
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition shadow-sm">
                     Зарегистрироваться
@@ -1177,15 +1197,33 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
         }
 
+        function showAuthError(msg) {
+            const box = document.getElementById('auth-error-box');
+            const text = document.getElementById('auth-error-text');
+            if (box && text) {
+                text.innerText = msg;
+                box.classList.remove('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        function clearAuthError() {
+            const box = document.getElementById('auth-error-box');
+            if (box) box.classList.add('hidden');
+        }
+
         function openAuthModal() {
+            clearAuthError();
             document.getElementById('auth-modal').classList.remove('hidden');
         }
 
         function closeAuthModal() {
+            clearAuthError();
             document.getElementById('auth-modal').classList.add('hidden');
         }
 
         function switchAuthTab(type) {
+            clearAuthError();
             const loginBtn = document.getElementById('tab-btn-login');
             const regBtn = document.getElementById('tab-btn-reg');
             const formLogin = document.getElementById('form-login');
@@ -1204,59 +1242,102 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
         }
 
-        // AUTHENTICATION: LOGIN
+        // AUTHENTICATION: LOGIN WITH RIGOROUS VALIDATION
         async function handleLoginSubmit(e) {
             e.preventDefault();
+            clearAuthError();
             const usernameInput = document.getElementById('login-username').value.trim();
             const passwordInput = document.getElementById('login-password').value.trim();
 
-            const users = getStoredUsers();
-            let matched = users.find(u => u.username.toLowerCase() === usernameInput.toLowerCase() && u.password === passwordInput);
-
-            // Serverless API check if available
-            try {
-                const res = await fetch('/api/auth', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'login', username: usernameInput, password: passwordInput })
-                });
-                const data = await res.json();
-                if (data.ok && data.user) {
-                    matched = data.user;
-                }
-            } catch (err) {}
-
-            if (!matched) {
-                showToast("Ошибка: неверный логин или пароль!");
+            if (!usernameInput) {
+                showAuthError("Введите ваш логин или никнейм");
+                return;
+            }
+            if (!passwordInput) {
+                showAuthError("Введите пароль");
                 return;
             }
 
-            currentUser = matched;
+            // Local DB verification first
+            const users = getStoredUsers();
+            const userByName = users.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
+
+            if (!userByName) {
+                // Try API
+                try {
+                    const res = await fetch('/api/auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'login', username: usernameInput, password: passwordInput })
+                    });
+                    const data = await res.json();
+                    if (data.ok && data.user) {
+                        currentUser = data.user;
+                        localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                        showToast(`Добро пожаловать, ${currentUser.username}!`);
+                        closeAuthModal();
+                        navigateTab('cabinet');
+                        return;
+                    } else if (data.error) {
+                        showAuthError(data.error);
+                        return;
+                    }
+                } catch (err) {}
+
+                showAuthError("Пользователь с таким никнеймом не найден");
+                return;
+            }
+
+            if (userByName.password !== passwordInput) {
+                showAuthError("Неверный пароль. Проверьте правильность ввода.");
+                return;
+            }
+
+            currentUser = userByName;
             localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
-            showToast(`Добро пожаловать, ${currentUser.username}! Реальный UID: #${currentUser.uid}`);
+            showToast(`Вход выполнен! Реальный UID: #${currentUser.uid}`);
             closeAuthModal();
             navigateTab('cabinet');
         }
 
-        // AUTHENTICATION: REGISTER WITH REAL SEQUENTIAL UID
+        // AUTHENTICATION: REGISTER WITH FORMAT AND PASSWORD VALIDATION
         async function handleRegisterSubmit(e) {
             e.preventDefault();
+            clearAuthError();
             const usernameInput = document.getElementById('reg-username').value.trim();
             const passwordInput = document.getElementById('reg-password').value.trim();
+            const confirmInput = document.getElementById('reg-password-confirm').value.trim();
 
-            if (usernameInput.length < 3) {
-                showToast("Никнейм должен содержать минимум 3 символа");
-                return;
-            }
-            if (passwordInput.length < 4) {
-                showToast("Пароль должен содержать минимум 4 символа");
+            // 1. Username length
+            if (usernameInput.length < 3 || usernameInput.length > 20) {
+                showAuthError("Никнейм должен содержать от 3 до 20 символов");
                 return;
             }
 
+            // 2. Username format (only alphanumeric and underscores)
+            const userRegex = /^[a-zA-Z0-9_]+$/;
+            if (!userRegex.test(usernameInput)) {
+                showAuthError("Логин может содержать только латиницу, цифры и _ (без пробелов)");
+                return;
+            }
+
+            // 3. Password length
+            if (passwordInput.length < 6) {
+                showAuthError("Пароль должен содержать минимум 6 символов");
+                return;
+            }
+
+            // 4. Password confirmation match
+            if (passwordInput !== confirmInput) {
+                showAuthError("Введенные пароли не совпадают");
+                return;
+            }
+
+            // 5. Uniqueness check
             const users = getStoredUsers();
             const exists = users.some(u => u.username.toLowerCase() === usernameInput.toLowerCase());
             if (exists) {
-                showToast("Пользователь с таким никнеймом уже зарегистрирован!");
+                showAuthError("Пользователь с таким никнеймом уже зарегистрирован");
                 return;
             }
 
@@ -1285,7 +1366,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 await fetch('/api/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'register', username: usernameInput, password: passwordInput })
+                    body: JSON.stringify({ action: 'register', username: usernameInput, password: passwordInput, confirmPassword: confirmInput })
                 });
             } catch (err) {}
 

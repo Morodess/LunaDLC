@@ -40,12 +40,20 @@ module.exports = (req, res) => {
   if (action === 'register') {
     const username = (body.username || '').trim();
     const password = (body.password || '').trim();
+    const confirmPassword = (body.confirmPassword || '').trim();
 
-    if (!username || username.length < 3) {
-      return res.status(400).json({ ok: false, error: 'Никнейм должен содержать минимум 3 символа' });
+    if (!username || username.length < 3 || username.length > 20) {
+      return res.status(400).json({ ok: false, error: 'Логин должен содержать от 3 до 20 символов' });
     }
-    if (!password || password.length < 4) {
-      return res.status(400).json({ ok: false, error: 'Пароль должен содержать минимум 4 символа' });
+    const userRegex = /^[a-zA-Z0-9_]+$/;
+    if (!userRegex.test(username)) {
+      return res.status(400).json({ ok: false, error: 'Логин может содержать только латинские буквы, цифры и _ (без пробелов)' });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ ok: false, error: 'Пароль должен содержать минимум 6 символов' });
+    }
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({ ok: false, error: 'Пароли не совпадают' });
     }
 
     const exists = db.users.some(u => u.username.toLowerCase() === username.toLowerCase());
@@ -81,12 +89,23 @@ module.exports = (req, res) => {
   const username = (body.username || '').trim();
   const password = (body.password || '').trim();
 
-  const user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-  if (!user) {
-    return res.status(401).json({ ok: false, error: 'Неверный логин или пароль' });
+  if (!username) {
+    return res.status(400).json({ ok: false, error: 'Введите ваш логин или никнейм' });
+  }
+  if (!password) {
+    return res.status(400).json({ ok: false, error: 'Введите пароль' });
   }
 
-  const safeUser = { ...user };
+  const userByName = db.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (!userByName) {
+    return res.status(404).json({ ok: false, error: 'Пользователь с таким никнеймом не найден' });
+  }
+
+  if (userByName.password !== password) {
+    return res.status(401).json({ ok: false, error: 'Неверный пароль' });
+  }
+
+  const safeUser = { ...userByName };
   delete safeUser.password;
   return res.status(200).json({ ok: true, user: safeUser });
 };

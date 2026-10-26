@@ -1,0 +1,10 @@
+{
+  "name": "lunaclient-site",
+  "version": "1.0.0",
+  "description": "LunaClient Next-Gen Minecraft Client Official Web Portal & API",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "dependencies": {}
+}

@@ -79,11 +79,16 @@ async function initPostgres() {
   }
 }
 
+const ALT_DB_PATH = path.join(__dirname, '..', 'Site', 'data', 'users.json');
+
 // Local JSON file fallback (used when no cloud DB env var is provided)
 function loadLocalDb() {
   try {
     if (fs.existsSync(DB_PATH)) {
       return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+    }
+    if (fs.existsSync(ALT_DB_PATH)) {
+      return JSON.parse(fs.readFileSync(ALT_DB_PATH, 'utf8'));
     }
   } catch (e) {}
   return {
@@ -96,12 +101,17 @@ function loadLocalDb() {
 }
 
 function saveLocalDb(db) {
-  try {
-    const dir = path.dirname(DB_PATH);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
-  } catch (e) {}
+  const json = JSON.stringify(db, null, 2);
+  const targets = [DB_PATH, ALT_DB_PATH];
+  for (const t of targets) {
+    try {
+      const dir = path.dirname(t);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(t, json, 'utf8');
+    } catch (e) {}
+  }
 }
+
 
 function mapPgUser(row) {
   if (!row) return null;

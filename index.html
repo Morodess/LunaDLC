@@ -796,26 +796,6 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 </div>
             </div>
 
-            <!-- Dedicated Account Security & Credentials Management Card -->
-            <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl mb-8 space-y-4">
-                <div class="flex items-center space-x-2 text-noirText">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-sky-400"></i>
-                    <h3 class="text-sm font-bold">Безопасность и управление учетной записью</h3>
-                </div>
-                <p class="text-xs text-noirTextMuted leading-relaxed">
-                    Здесь вы можете изменить текущий пароль для входа на сайт и в клиент, либо полностью и безвозвратно удалить свой профиль из базы данных.
-                </p>
-                <div class="flex flex-wrap items-center gap-3 pt-1">
-                    <button onclick="openChangePasswordModal()" class="px-5 py-2.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong bg-neutral-100 dark:bg-neutral-900 text-xs text-noirText font-semibold transition flex items-center space-x-2 shadow-sm cursor-pointer">
-                        <i data-lucide="key" class="w-4 h-4 text-sky-400"></i>
-                        <span>Сменить пароль</span>
-                    </button>
-                    <button onclick="openDeleteAccountModal()" class="px-5 py-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs text-rose-400 font-semibold transition flex items-center space-x-2 shadow-sm cursor-pointer">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        <span>Удалить аккаунт</span>
-                    </button>
-                </div>
-            </div>
 
             <!-- License Key Activation Section -->
             <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl mb-8 space-y-4">
@@ -1855,7 +1835,35 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 showToast("Введите лицензионный ключ!");
                 return;
             }
+            if (!currentUser || !currentUser.uid) {
+                showToast("Сначала авторизуйтесь в личном кабинете!");
+                return;
+            }
 
+            // 1. Try server API first (keys are stored on server/cloud DB)
+            try {
+                const res = await fetch('/api/redeem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: currentUser.uid, key: keyStr })
+                });
+                const data = await res.json();
+                if (data.ok && data.user) {
+                    currentUser = { ...currentUser, ...data.user };
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    input.value = '';
+                    showToast(data.message || `Ключ активирован! Ваша подписка: ${currentUser.subscription}`);
+                    updateCabinetUI();
+                    return;
+                } else if (data.error) {
+                    showToast("Ошибка: " + data.error);
+                    return;
+                }
+            } catch (err) {
+                console.warn("[Redeem] API offline, trying local storage fallback...", err);
+            }
+
+            // 2. Local fallback if API is not available
             const keys = getStoredKeys();
             const keyObj = keys.find(k => k.key.toUpperCase() === keyStr);
 
@@ -1868,13 +1876,11 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 return;
             }
 
-            // Mark key as used
             keyObj.used = true;
             keyObj.usedByUid = currentUser.uid;
             keyObj.usedAt = new Date().toISOString().split('T')[0];
             saveStoredKeys(keys);
 
-            // Update user subscription
             const now = new Date();
             let base = now;
             if (currentUser.subExpiry && new Date(currentUser.subExpiry) > now) {
@@ -1894,7 +1900,6 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 currentUser.subscription = keyObj.durationLabel || `${days} дней`;
             }
 
-            // Save in DB
             const users = getStoredUsers();
             const uIdx = users.findIndex(u => u.uid === currentUser.uid);
             if (uIdx !== -1) {
@@ -1904,19 +1909,11 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
             localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
 
-            // Sync API
-            try {
-                await fetch('/api/redeem', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ uid: currentUser.uid, key: keyStr })
-                });
-            } catch (err) {}
-
             input.value = '';
             showToast(`Ключ активирован! Ваша подписка: ${currentUser.subscription}`);
             updateCabinetUI();
         }
+
 
         // LOGOUT
         function logoutUser() {

@@ -24,8 +24,9 @@ module.exports = async (req, res) => {
 
     // Check subscription expiry
     const now = new Date();
-    const isLifetime = user.subscription === 'Lifetime' || user.role === 'Admin';
-    const isSubActive = isLifetime || (user.subExpiry && new Date(user.subExpiry) >= now && user.subscription !== 'Не активна' && user.subscription !== 'Нет подписки');
+    const rLower = (user.role || '').toLowerCase();
+    const isPrivileged = user.subscription === 'Lifetime' || rLower === 'admin' || rLower === 'vip' || rLower === 'media' || rLower === 'dev';
+    const isSubActive = isPrivileged || (user.subExpiry && new Date(user.subExpiry) >= now && user.subscription !== 'Не активна' && user.subscription !== 'Нет подписки');
 
     if (!isSubActive) {
       return res.status(403).json({

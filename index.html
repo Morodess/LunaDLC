@@ -710,6 +710,10 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                     <h1 class="text-3xl font-black text-noirText">Личный кабинет</h1>
                 </div>
                 <div class="flex items-center flex-wrap gap-2">
+                    <button onclick="refreshUserProfile(true)" class="px-3.5 py-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition flex items-center space-x-1.5" title="Синхронизировать данные профиля с сервером">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Обновить</span>
+                    </button>
                     <button onclick="openChangePasswordModal()" class="px-3.5 py-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition flex items-center space-x-1.5">
                         <i data-lucide="key" class="w-3.5 h-3.5 text-sky-400"></i>
                         <span>Сменить пароль</span>
@@ -773,8 +777,12 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                             <i data-lucide="cpu" class="w-4 h-4 text-sky-400"></i>
                             <h3 class="text-sm font-bold">Привязка оборудования (Hardware ID / HWID)</h3>
                         </div>
-                        <p class="text-xs text-noirTextMuted font-mono">
-                            HWID Hash: <span id="cab-hwid-text" class="text-noirText font-semibold">Не привязан</span>
+                        <p class="text-xs text-noirTextMuted font-mono flex items-center space-x-2">
+                            <span>HWID Hash:</span>
+                            <span id="cab-hwid-text" class="text-noirText font-semibold">Не привязан</span>
+                            <button onclick="refreshUserProfile(true)" class="text-noirTextMuted hover:text-emerald-400 transition p-1" title="Проверить обновление HWID">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            </button>
                         </p>
                         <p class="text-[11px] text-neutral-500 font-mono">
                             Привязка выполняется автоматически при первом входе через LunaLauncher.
@@ -1314,7 +1322,9 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
         } catch (e) {}
 
-        // Navigation
+        // Navigation & Auto-Sync
+        let cabinetPollTimer = null;
+
         function navigateTab(tabName) {
             const viewMain = document.getElementById('view-main');
             const viewConfigs = document.getElementById('view-webconfigs');
@@ -1325,17 +1335,26 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             viewCabinet.classList.add('hidden');
 
             if (tabName === 'webconfigs') {
+                if (cabinetPollTimer) { clearInterval(cabinetPollTimer); cabinetPollTimer = null; }
                 viewConfigs.classList.remove('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (tabName === 'cabinet') {
                 viewCabinet.classList.remove('hidden');
                 updateCabinetUI();
+                if (!cabinetPollTimer) {
+                    cabinetPollTimer = setInterval(() => { refreshUserProfile(false); }, 3000);
+                }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else {
+                if (cabinetPollTimer) { clearInterval(cabinetPollTimer); cabinetPollTimer = null; }
                 viewMain.classList.remove('hidden');
             }
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
+
+        window.addEventListener('focus', () => {
+            if (currentUser) refreshUserProfile(false);
+        });
 
         function handleAccountButtonClick() {
             if (currentUser) {
@@ -1687,8 +1706,51 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
         }
 
+        // REAL-TIME PROFILE & HWID REFRESH
+        async function refreshUserProfile(showNotice = false) {
+            if (!currentUser || !currentUser.uid) return;
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'get_profile', uid: currentUser.uid })
+                });
+                const data = await res.json();
+                if (data.ok && data.user) {
+                    const changed = (currentUser.role !== data.user.role) ||
+                                    (currentUser.hwid !== data.user.hwid) ||
+                                    (currentUser.subscription !== data.user.subscription) ||
+                                    (currentUser.subExpiry !== data.user.subExpiry);
+                    currentUser = { ...currentUser, ...data.user };
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    renderCabinetUI();
+                    if (showNotice) showToast("Данные профиля обновлены!");
+                    return;
+                }
+            } catch (err) {}
+
+            // Offline fallback
+            const users = getStoredUsers();
+            const fresh = users.find(u => u.uid === currentUser.uid);
+            if (fresh) {
+                const changed = (currentUser.role !== fresh.role) ||
+                                (currentUser.hwid !== fresh.hwid) ||
+                                (currentUser.subscription !== fresh.subscription) ||
+                                (currentUser.subExpiry !== fresh.subExpiry);
+                currentUser = { ...currentUser, ...fresh };
+                localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                renderCabinetUI();
+                if (showNotice) showToast("Данные профиля обновлены!");
+            }
+        }
+
         // UPDATE CABINET UI
         function updateCabinetUI() {
+            renderCabinetUI();
+            refreshUserProfile(false);
+        }
+
+        function renderCabinetUI() {
             if (!currentUser) return;
 
             document.getElementById('cab-username').innerText = currentUser.username;
@@ -1730,7 +1792,6 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
 
             // HWID Display & CONDITIONAL RESET BUTTON LOGIC:
-            // "те кому не доступен сброс хвида не отображай кнопку, те кому нужно запрос не делай пусть сами нажимают и сбрасывается"
             const hwidText = document.getElementById('cab-hwid-text');
             const hasBoundHwid = currentUser.hwid && currentUser.hwid.trim() !== '' && currentUser.hwid !== 'Не привязан';
             hwidText.innerText = hasBoundHwid ? currentUser.hwid : 'Не привязан (ожидает запуска в лаунчере)';
@@ -1755,8 +1816,6 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             } else {
                 adminSection.classList.add('hidden');
             }
-
-            lucide.createIcons();
         }
 
         // INSTANT SELF-SERVICE HWID RESET

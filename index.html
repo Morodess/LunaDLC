@@ -788,6 +788,27 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 </div>
             </div>
 
+            <!-- Dedicated Account Security & Credentials Management Card -->
+            <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl mb-8 space-y-4">
+                <div class="flex items-center space-x-2 text-noirText">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-sky-400"></i>
+                    <h3 class="text-sm font-bold">Безопасность и управление учетной записью</h3>
+                </div>
+                <p class="text-xs text-noirTextMuted leading-relaxed">
+                    Здесь вы можете изменить текущий пароль для входа на сайт и в клиент, либо полностью и безвозвратно удалить свой профиль из базы данных.
+                </p>
+                <div class="flex flex-wrap items-center gap-3 pt-1">
+                    <button onclick="openChangePasswordModal()" class="px-5 py-2.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong bg-neutral-100 dark:bg-neutral-900 text-xs text-noirText font-semibold transition flex items-center space-x-2 shadow-sm cursor-pointer">
+                        <i data-lucide="key" class="w-4 h-4 text-sky-400"></i>
+                        <span>Сменить пароль</span>
+                    </button>
+                    <button onclick="openDeleteAccountModal()" class="px-5 py-2.5 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-xs text-rose-400 font-semibold transition flex items-center space-x-2 shadow-sm cursor-pointer">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Удалить аккаунт</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- License Key Activation Section -->
             <div class="bg-noirCard border border-noirBorder p-6 rounded-2xl mb-8 space-y-4">
                 <div class="flex items-center space-x-2 text-noirText">
@@ -1515,6 +1536,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             document.getElementById('pwd-confirm').value = '';
             document.getElementById('pwd-error-box').classList.add('hidden');
             document.getElementById('change-password-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         }
 
         function closeChangePasswordModal() {
@@ -1559,6 +1581,11 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 });
                 const data = await res.json();
                 if (data.ok) {
+                    if (data.user) {
+                        currentUser = { ...currentUser, ...data.user };
+                    }
+                    currentUser.password = newPassword;
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
                     showToast("Пароль успешно изменен!");
                     closeChangePasswordModal();
                 } else {
@@ -1566,8 +1593,25 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                     errorText.innerText = data.error || "Ошибка при смене пароля";
                 }
             } catch (err) {
-                errorBox.classList.remove('hidden');
-                errorText.innerText = "Ошибка сети: " + err.message;
+                // Offline fallback
+                const users = getStoredUsers();
+                const u = users.find(x => x.uid === currentUser.uid || x.username.toLowerCase() === currentUser.username.toLowerCase());
+                if (u) {
+                    if (u.password && u.password !== oldPassword) {
+                        errorBox.classList.remove('hidden');
+                        errorText.innerText = "Текущий пароль указан неверно";
+                        return;
+                    }
+                    u.password = newPassword;
+                    saveStoredUsers(users);
+                    currentUser.password = newPassword;
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    showToast("Пароль успешно изменен!");
+                    closeChangePasswordModal();
+                } else {
+                    errorBox.classList.remove('hidden');
+                    errorText.innerText = "Ошибка сети: " + err.message;
+                }
             }
         }
 
@@ -1578,6 +1622,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             document.getElementById('del-password').value = '';
             document.getElementById('del-error-box').classList.add('hidden');
             document.getElementById('delete-account-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         }
 
         function closeDeleteAccountModal() {
@@ -1616,8 +1661,29 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                     errorText.innerText = data.error || "Не удалось удалить аккаунт";
                 }
             } catch (err) {
-                errorBox.classList.remove('hidden');
-                errorText.innerText = "Ошибка сети: " + err.message;
+                // Offline fallback
+                let users = getStoredUsers();
+                const u = users.find(x => x.uid === currentUser.uid || x.username.toLowerCase() === currentUser.username.toLowerCase());
+                if (u) {
+                    if (u.password && u.password !== password) {
+                        errorBox.classList.remove('hidden');
+                        errorText.innerText = "Неверный пароль";
+                        return;
+                    }
+                    if (u.uid === 1 || u.username.toLowerCase() === 'tomoro') {
+                        errorBox.classList.remove('hidden');
+                        errorText.innerText = "Основной аккаунт администратора не может быть удален";
+                        return;
+                    }
+                    users = users.filter(x => x.uid !== u.uid);
+                    saveStoredUsers(users);
+                    showToast("Ваш аккаунт был успешно удален.");
+                    closeDeleteAccountModal();
+                    logoutUser();
+                } else {
+                    errorBox.classList.remove('hidden');
+                    errorText.innerText = "Ошибка сети: " + err.message;
+                }
             }
         }
 

@@ -709,10 +709,20 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                     </button>
                     <h1 class="text-3xl font-black text-noirText">Личный кабинет</h1>
                 </div>
-                <button onclick="logoutUser()" class="px-3.5 py-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition flex items-center space-x-1.5">
-                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-                    <span>Выйти из аккаунта</span>
-                </button>
+                <div class="flex items-center flex-wrap gap-2">
+                    <button onclick="openChangePasswordModal()" class="px-3.5 py-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition flex items-center space-x-1.5">
+                        <i data-lucide="key" class="w-3.5 h-3.5 text-sky-400"></i>
+                        <span>Сменить пароль</span>
+                    </button>
+                    <button onclick="openDeleteAccountModal()" class="px-3.5 py-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 bg-rose-500/10 hover:bg-rose-500/20 text-xs text-rose-400 font-medium transition flex items-center space-x-1.5">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Удалить аккаунт</span>
+                    </button>
+                    <button onclick="logoutUser()" class="px-3.5 py-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition flex items-center space-x-1.5">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                        <span>Выйти</span>
+                    </button>
+                </div>
             </div>
 
             <!-- User Information Cards Grid -->
@@ -847,13 +857,18 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                             <i data-lucide="shield" class="w-4 h-4 text-purple-400"></i>
                             <h3 class="text-sm font-bold">Выдача тега / роли по UID</h3>
                         </div>
-                        <p class="text-xs text-noirTextMuted">Присвоить тег Media, Admin или обычный User по порядковому UID.</p>
-                        <input id="admin-role-uid" type="number" min="1" placeholder="Введите реальный UID (например: 2)" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none font-mono">
-                        <select id="admin-role-select" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3 py-2 text-xs text-noirText focus:outline-none font-mono">
-                            <option value="Media">Тег: Media [MEDIA]</option>
-                            <option value="Admin">Тег: Admin [ADMIN]</option>
-                            <option value="User">Тег: User [USER]</option>
-                        </select>
+                        <p class="text-xs text-noirTextMuted">Присвоить тег/префикс пользователю по порядковому UID (например, #2 или 2).</p>
+                        <input id="admin-role-uid" type="text" placeholder="Введите UID (например: 2 или #2)" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none font-mono">
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="admin-role-select" onchange="document.getElementById('admin-role-custom').value = this.value" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3 py-2 text-xs text-noirText focus:outline-none font-mono">
+                                <option value="Admin">Тег: Admin [ADMIN]</option>
+                                <option value="Media">Тег: Media [MEDIA]</option>
+                                <option value="VIP">Тег: VIP [VIP]</option>
+                                <option value="Dev">Тег: Dev [DEV]</option>
+                                <option value="User">Тег: User [USER]</option>
+                            </select>
+                            <input id="admin-role-custom" type="text" placeholder="Или свой префикс" value="Admin" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none font-mono">
+                        </div>
                         <button onclick="adminAssignRole()" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase hover:opacity-90 transition flex items-center justify-center space-x-1.5">
                             <i data-lucide="badge-check" class="w-3.5 h-3.5"></i>
                             <span>Применить тег по UID</span>
@@ -996,6 +1011,92 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 </div>
                 <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition shadow-sm">
                     Зарегистрироваться
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="change-password-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-noirCard rounded-3xl w-full max-w-sm p-6 sm:p-8 border border-noirBorder shadow-2xl relative space-y-5">
+            <button onclick="closeChangePasswordModal()" class="absolute top-5 right-5 text-noirTextMuted hover:text-noirText">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="space-y-1">
+                <h3 class="text-lg font-bold text-noirText">Смена пароля</h3>
+                <p class="text-xs text-noirTextMuted font-mono">Аккаунт: <span id="pwd-modal-user" class="text-sky-400 font-semibold"></span></p>
+            </div>
+            <div id="pwd-error-box" class="hidden text-xs font-mono p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-start space-x-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-400"></i>
+                <span id="pwd-error-text">Ошибка</span>
+            </div>
+            <form onsubmit="handleChangePasswordSubmit(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Текущий пароль</label>
+                    <div class="relative flex items-center">
+                        <input id="pwd-old" type="password" required placeholder="••••••••" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                        <button type="button" onclick="togglePasswordVisibility('pwd-old', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Новый пароль</label>
+                    <div class="relative flex items-center">
+                        <input id="pwd-new" type="password" required placeholder="Минимум 6 символов" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                        <button type="button" onclick="togglePasswordVisibility('pwd-new', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Повторите новый пароль</label>
+                    <div class="relative flex items-center">
+                        <input id="pwd-confirm" type="password" required placeholder="Повторите новый пароль" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                        <button type="button" onclick="togglePasswordVisibility('pwd-confirm', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-black dark:bg-white text-white dark:text-black font-semibold text-xs uppercase tracking-wide hover:opacity-90 transition shadow-sm mt-2">
+                    Сохранить пароль
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DELETE ACCOUNT MODAL -->
+    <div id="delete-account-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-noirCard rounded-3xl w-full max-w-sm p-6 sm:p-8 border border-rose-500/30 shadow-2xl relative space-y-5">
+            <button onclick="closeDeleteAccountModal()" class="absolute top-5 right-5 text-noirTextMuted hover:text-noirText">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+            <div class="space-y-1">
+                <div class="flex items-center space-x-2 text-rose-400 font-bold text-sm">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span>Удаление аккаунта</span>
+                </div>
+                <p class="text-xs text-noirTextMuted font-mono">Это действие необратимо!</p>
+            </div>
+            <div class="text-xs text-noirTextMuted leading-relaxed bg-rose-500/10 border border-rose-500/20 p-3.5 rounded-xl">
+                Вы действительно хотите удалить учетную запись <strong id="del-modal-user" class="text-noirText font-mono"></strong>? Ваш уникальный UID и активная подписка будут навсегда удалены.
+            </div>
+            <div id="del-error-box" class="hidden text-xs font-mono p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-start space-x-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 mt-0.5 flex-shrink-0 text-rose-400"></i>
+                <span id="del-error-text">Ошибка</span>
+            </div>
+            <form onsubmit="handleDeleteAccountSubmit(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Для подтверждения введите пароль</label>
+                    <div class="relative flex items-center">
+                        <input id="del-password" type="password" required placeholder="••••••••" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl pl-3.5 pr-10 py-2 text-xs text-noirText focus:outline-none focus:border-rose-500">
+                        <button type="button" onclick="togglePasswordVisibility('del-password', this)" class="absolute right-3 text-noirTextMuted hover:text-noirText transition p-1 cursor-pointer">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wide transition shadow-sm">
+                    Удалить навсегда
                 </button>
             </form>
         </div>
@@ -1268,7 +1369,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
         }
 
-        // AUTHENTICATION: LOGIN WITH RIGOROUS VALIDATION
+        // AUTHENTICATION: LOGIN WITH RIGOROUS SERVER-FIRST VALIDATION
         async function handleLoginSubmit(e) {
             e.preventDefault();
             clearAuthError();
@@ -1284,46 +1385,42 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 return;
             }
 
-            // Local DB verification first
-            const users = getStoredUsers();
-            const userByName = users.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
-
-            if (!userByName) {
-                // Try API
-                try {
-                    const res = await fetch('/api/auth', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'login', username: usernameInput, password: passwordInput })
-                    });
-                    const data = await res.json();
-                    if (data.ok && data.user) {
-                        currentUser = data.user;
-                        localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
-                        showToast(`Добро пожаловать, ${currentUser.username}!`);
-                        closeAuthModal();
-                        navigateTab('cabinet');
-                        return;
-                    } else if (data.error) {
-                        showAuthError(data.error);
-                        return;
-                    }
-                } catch (err) {}
-
-                showAuthError("Пользователь с таким никнеймом не найден");
-                return;
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'login', username: usernameInput, password: passwordInput })
+                });
+                const data = await res.json();
+                if (data.ok && data.user) {
+                    currentUser = data.user;
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    showToast(`Добро пожаловать, ${currentUser.username}! (UID #${currentUser.uid})`);
+                    closeAuthModal();
+                    navigateTab('cabinet');
+                    return;
+                } else if (data.error) {
+                    showAuthError(data.error);
+                    return;
+                }
+            } catch (err) {
+                // Offline fallback
+                const users = getStoredUsers();
+                const userByName = users.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
+                if (!userByName) {
+                    showAuthError("Пользователь с таким никнеймом не найден");
+                    return;
+                }
+                if (userByName.password !== passwordInput) {
+                    showAuthError("Неверный пароль. Проверьте правильность ввода.");
+                    return;
+                }
+                currentUser = userByName;
+                localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                showToast(`Вход выполнен! Реальный UID: #${currentUser.uid}`);
+                closeAuthModal();
+                navigateTab('cabinet');
             }
-
-            if (userByName.password !== passwordInput) {
-                showAuthError("Неверный пароль. Проверьте правильность ввода.");
-                return;
-            }
-
-            currentUser = userByName;
-            localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
-            showToast(`Вход выполнен! Реальный UID: #${currentUser.uid}`);
-            closeAuthModal();
-            navigateTab('cabinet');
         }
 
         // AUTHENTICATION: REGISTER WITH FORMAT AND PASSWORD VALIDATION
@@ -1359,48 +1456,169 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 return;
             }
 
-            // 5. Uniqueness check
-            const users = getStoredUsers();
-            const exists = users.some(u => u.username.toLowerCase() === usernameInput.toLowerCase());
-            if (exists) {
-                showAuthError("Пользователь с таким никнеймом уже зарегистрирован");
-                return;
-            }
-
-            // Real sequential integer UID!
-            const maxUid = users.reduce((max, u) => Math.max(max, parseInt(u.uid, 10) || 0), 0);
-            const newUid = maxUid + 1;
-            const now = new Date();
-            const expiry = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-            const newUser = {
-                uid: newUid,
-                username: usernameInput,
-                password: passwordInput,
-                role: 'User',
-                subscription: 'Демо-период (24ч)',
-                subExpiry: expiry,
-                hwid: '',
-                createdAt: now.toISOString().split('T')[0]
-            };
-
-            users.push(newUser);
-            saveStoredUsers(users);
-
-            // Also attempt to push to Vercel API
             try {
-                await fetch('/api/auth', {
+                const res = await fetch('/api/auth', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'register', username: usernameInput, password: passwordInput, confirmPassword: confirmInput })
                 });
-            } catch (err) {}
+                const data = await res.json();
+                if (data.ok && data.user) {
+                    currentUser = data.user;
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    showToast(`Успешная регистрация! Присвоен реальный UID: #${currentUser.uid}`);
+                    closeAuthModal();
+                    navigateTab('cabinet');
+                    return;
+                } else if (data.error) {
+                    showAuthError(data.error);
+                    return;
+                }
+            } catch (err) {
+                // Offline fallback
+                const users = getStoredUsers();
+                const exists = users.some(u => u.username.toLowerCase() === usernameInput.toLowerCase());
+                if (exists) {
+                    showAuthError("Пользователь с таким никнеймом уже зарегистрирован");
+                    return;
+                }
+                const maxUid = users.reduce((max, u) => Math.max(max, parseInt(u.uid, 10) || 0), 0);
+                const newUid = maxUid + 1;
+                const now = new Date();
+                const expiry = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                const newUser = {
+                    uid: newUid,
+                    username: usernameInput,
+                    password: passwordInput,
+                    role: 'User',
+                    subscription: 'Демо-период (24ч)',
+                    subExpiry: expiry,
+                    hwid: '',
+                    createdAt: now.toISOString().split('T')[0]
+                };
+                users.push(newUser);
+                saveStoredUsers(users);
+                currentUser = newUser;
+                localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                showToast(`Успешная регистрация! Присвоен реальный UID: #${newUid}`);
+                closeAuthModal();
+                navigateTab('cabinet');
+            }
+        }
 
-            currentUser = newUser;
-            localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
-            showToast(`Успешная регистрация! Присвоен реальный UID: #${newUid}`);
-            closeAuthModal();
-            navigateTab('cabinet');
+        // CHANGE PASSWORD MODAL LOGIC
+        function openChangePasswordModal() {
+            if (!currentUser) return;
+            document.getElementById('pwd-modal-user').innerText = currentUser.username + ' (UID #' + currentUser.uid + ')';
+            document.getElementById('pwd-old').value = '';
+            document.getElementById('pwd-new').value = '';
+            document.getElementById('pwd-confirm').value = '';
+            document.getElementById('pwd-error-box').classList.add('hidden');
+            document.getElementById('change-password-modal').classList.remove('hidden');
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('change-password-modal').classList.add('hidden');
+        }
+
+        async function handleChangePasswordSubmit(e) {
+            e.preventDefault();
+            const errorBox = document.getElementById('pwd-error-box');
+            const errorText = document.getElementById('pwd-error-text');
+            const oldPassword = document.getElementById('pwd-old').value.trim();
+            const newPassword = document.getElementById('pwd-new').value.trim();
+            const confirmPassword = document.getElementById('pwd-confirm').value.trim();
+
+            if (!oldPassword) {
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Введите текущий пароль";
+                return;
+            }
+            if (newPassword.length < 6) {
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Новый пароль должен содержать от 6 символов";
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Новые пароли не совпадают";
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'change_password',
+                        uid: currentUser.uid,
+                        oldPassword,
+                        newPassword,
+                        confirmNewPassword: confirmPassword
+                    })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showToast("Пароль успешно изменен!");
+                    closeChangePasswordModal();
+                } else {
+                    errorBox.classList.remove('hidden');
+                    errorText.innerText = data.error || "Ошибка при смене пароля";
+                }
+            } catch (err) {
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Ошибка сети: " + err.message;
+            }
+        }
+
+        // DELETE ACCOUNT MODAL LOGIC
+        function openDeleteAccountModal() {
+            if (!currentUser) return;
+            document.getElementById('del-modal-user').innerText = currentUser.username + ' (UID #' + currentUser.uid + ')';
+            document.getElementById('del-password').value = '';
+            document.getElementById('del-error-box').classList.add('hidden');
+            document.getElementById('delete-account-modal').classList.remove('hidden');
+        }
+
+        function closeDeleteAccountModal() {
+            document.getElementById('delete-account-modal').classList.add('hidden');
+        }
+
+        async function handleDeleteAccountSubmit(e) {
+            e.preventDefault();
+            const errorBox = document.getElementById('del-error-box');
+            const errorText = document.getElementById('del-error-text');
+            const password = document.getElementById('del-password').value.trim();
+
+            if (!password) {
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Введите пароль для подтверждения";
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete_account',
+                        uid: currentUser.uid,
+                        password
+                    })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showToast("Ваш аккаунт был успешно удален.");
+                    closeDeleteAccountModal();
+                    logoutUser();
+                } else {
+                    errorBox.classList.remove('hidden');
+                    errorText.innerText = data.error || "Не удалось удалить аккаунт";
+                }
+            } catch (err) {
+                errorBox.classList.remove('hidden');
+                errorText.innerText = "Ошибка сети: " + err.message;
+            }
         }
 
         // UPDATE CABINET UI
@@ -1413,12 +1631,22 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
 
             // Render Role / Tag Badge
             const badge = document.getElementById('cab-role-badge');
-            if (currentUser.role === 'Admin') {
+            const r = (currentUser.role || 'User').trim();
+            if (r.toLowerCase() === 'admin') {
                 badge.className = "px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/30 font-mono text-xs font-bold";
                 badge.innerText = "[ADMIN]";
-            } else if (currentUser.role === 'Media') {
+            } else if (r.toLowerCase() === 'media') {
                 badge.className = "px-2.5 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/30 font-mono text-xs font-bold";
                 badge.innerText = "[MEDIA]";
+            } else if (r.toLowerCase() === 'vip' || r.toLowerCase() === 'premium') {
+                badge.className = "px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/30 font-mono text-xs font-bold";
+                badge.innerText = `[${r.toUpperCase()}]`;
+            } else if (r.toLowerCase() === 'dev' || r.toLowerCase() === 'staff') {
+                badge.className = "px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 font-mono text-xs font-bold";
+                badge.innerText = `[${r.toUpperCase()}]`;
+            } else if (r.toLowerCase() !== 'user') {
+                badge.className = "px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono text-xs font-bold";
+                badge.innerText = `[${r.toUpperCase()}]`;
             } else {
                 badge.className = "px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/30 font-mono text-xs font-bold";
                 badge.innerText = "[USER]";
@@ -1593,81 +1821,126 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                 return;
             }
 
-            const users = getStoredUsers();
-            const user = users.find(u => u.uid === targetUid);
-            if (!user) {
-                showToast(`Пользователь с UID #${targetUid} не найден!`);
-                return;
-            }
-
-            user.hwid = '';
-            saveStoredUsers(users);
-
-            if (currentUser && currentUser.uid === targetUid) {
-                currentUser.hwid = '';
-                localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
-                updateCabinetUI();
-            }
-
             try {
-                await fetch('/api/admin', {
+                const res = await fetch('/api/admin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'reset_hwid', uid: targetUid })
                 });
-            } catch (err) {}
-
-            addAdminLog(`Сброшен HWID для пользователя с UID <strong class="text-emerald-500">#${targetUid}</strong> (${user.username})`);
-            showToast(`HWID для UID #${targetUid} успешно сброшен!`);
-            document.getElementById('admin-hwid-uid').value = '';
+                const data = await res.json();
+                if (data.ok) {
+                    const uname = data.user ? data.user.username : `UID #${targetUid}`;
+                    addAdminLog(`Сброшен HWID для пользователя с UID <strong class="text-emerald-500">#${targetUid}</strong> (${uname})`);
+                    showToast(data.message || `HWID для UID #${targetUid} успешно сброшен!`);
+                    document.getElementById('admin-hwid-uid').value = '';
+                    if (currentUser && currentUser.uid === targetUid) {
+                        currentUser.hwid = '';
+                        localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                        updateCabinetUI();
+                    }
+                    return;
+                } else {
+                    showToast("Ошибка: " + data.error);
+                    return;
+                }
+            } catch (err) {
+                // Fallback to local
+                const users = getStoredUsers();
+                const user = users.find(u => u.uid === targetUid);
+                if (!user) {
+                    showToast(`Пользователь с UID #${targetUid} не найден!`);
+                    return;
+                }
+                user.hwid = '';
+                saveStoredUsers(users);
+                if (currentUser && currentUser.uid === targetUid) {
+                    currentUser.hwid = '';
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    updateCabinetUI();
+                }
+                addAdminLog(`Сброшен HWID для пользователя с UID <strong class="text-emerald-500">#${targetUid}</strong> (${user.username})`);
+                showToast(`HWID для UID #${targetUid} успешно сброшен!`);
+                document.getElementById('admin-hwid-uid').value = '';
+            }
         }
 
         // ADMIN: ASSIGN TAG / ROLE BY UID
         async function adminAssignRole() {
             const uidInput = document.getElementById('admin-role-uid').value.trim();
-            const roleSelect = document.getElementById('admin-role-select').value;
-            const targetUid = parseInt(uidInput, 10);
+            const targetUid = parseInt(uidInput.replace(/[^0-9]/g, ''), 10);
+            const customRole = (document.getElementById('admin-role-custom')?.value || '').trim();
+            const roleSelect = customRole || document.getElementById('admin-role-select').value;
 
             if (!targetUid || isNaN(targetUid)) {
-                showToast("Укажите корректный числовой UID пользователя!");
+                showToast("Укажите корректный числовой UID пользователя (например, #2 или 2)!");
                 return;
-            }
-
-            const users = getStoredUsers();
-            const user = users.find(u => u.uid === targetUid);
-            if (!user) {
-                showToast(`Пользователь с UID #${targetUid} не найден!`);
-                return;
-            }
-
-            user.role = roleSelect;
-            saveStoredUsers(users);
-
-            if (currentUser && currentUser.uid === targetUid) {
-                currentUser.role = roleSelect;
-                localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
-                updateCabinetUI();
             }
 
             try {
-                await fetch('/api/admin', {
+                const res = await fetch('/api/admin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'set_role', uid: targetUid, role: roleSelect })
                 });
-            } catch (err) {}
-
-            addAdminLog(`Пользователю UID <strong class="text-emerald-500">#${targetUid}</strong> (${user.username}) выдан тег: <strong>[${roleSelect.toUpperCase()}]</strong>`);
-            showToast(`Тег [${roleSelect.toUpperCase()}] присвоен UID #${targetUid}!`);
-            document.getElementById('admin-role-uid').value = '';
+                const data = await res.json();
+                if (data.ok) {
+                    const uname = data.user ? data.user.username : `UID #${targetUid}`;
+                    addAdminLog(`Пользователю UID <strong class="text-emerald-500">#${targetUid}</strong> (${uname}) выдан тег: <strong>[${roleSelect.toUpperCase()}]</strong>`);
+                    showToast(data.message || `Тег [${roleSelect.toUpperCase()}] присвоен UID #${targetUid}!`);
+                    document.getElementById('admin-role-uid').value = '';
+                    if (currentUser && currentUser.uid === targetUid) {
+                        currentUser.role = roleSelect;
+                        localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                        updateCabinetUI();
+                    }
+                    return;
+                } else {
+                    showToast("Ошибка: " + data.error);
+                    return;
+                }
+            } catch (err) {
+                // Fallback to local
+                const users = getStoredUsers();
+                const user = users.find(u => u.uid === targetUid);
+                if (!user) {
+                    showToast(`Пользователь с UID #${targetUid} не найден!`);
+                    return;
+                }
+                user.role = roleSelect;
+                saveStoredUsers(users);
+                if (currentUser && currentUser.uid === targetUid) {
+                    currentUser.role = roleSelect;
+                    localStorage.setItem('luna_active_user', JSON.stringify(currentUser));
+                    updateCabinetUI();
+                }
+                addAdminLog(`Пользователю UID <strong class="text-emerald-500">#${targetUid}</strong> (${user.username}) выдан тег: <strong>[${roleSelect.toUpperCase()}]</strong>`);
+                showToast(`Тег [${roleSelect.toUpperCase()}] присвоен UID #${targetUid}!`);
+                document.getElementById('admin-role-uid').value = '';
+            }
         }
 
         // ADMIN: GENERATE KEY
         async function adminGenerateKey() {
             const plan = document.getElementById('admin-key-plan').value;
+            try {
+                const res = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'generate_key', plan: plan })
+                });
+                const data = await res.json();
+                if (data.ok && data.key) {
+                    const k = data.key;
+                    addAdminLog(`Сгенерирован ключ сабки (<span class="text-neutral-400">${k.durationLabel}</span>): <strong class="text-emerald-400 cursor-pointer" onclick="copyKey('${k.key}')">${k.key}</strong> (клик для копирования)`);
+                    showToast(`Сгенерирован ключ: ${k.key}`);
+                    refreshAdminKeysList();
+                    return;
+                }
+            } catch (err) {}
+
+            // Fallback
             const randChunk = () => Math.random().toString(36).substring(2, 6).toUpperCase();
             const key = `LUNA-${randChunk()}-${randChunk()}-${randChunk()}`;
-
             let label = "30 дней (1 месяц)";
             if (plan === '7d') label = "7 дней";
             else if (plan === '90d') label = "90 дней (3 месяца)";
@@ -1686,28 +1959,30 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             const keys = getStoredKeys();
             keys.unshift(keyObj);
             saveStoredKeys(keys);
-
-            try {
-                await fetch('/api/admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'generate_key', plan: plan })
-                });
-            } catch (err) {}
-
             addAdminLog(`Сгенерирован ключ сабки (<span class="text-neutral-400">${label}</span>): <strong class="text-emerald-400 cursor-pointer" onclick="copyKey('${key}')">${key}</strong> (клик для копирования)`);
             showToast(`Сгенерирован ключ: ${key}`);
             refreshAdminKeysList();
         }
 
-        function refreshAdminKeysList() {
+        async function refreshAdminKeysList() {
             const container = document.getElementById('admin-keys-container');
             const badge = document.getElementById('keys-count-badge');
             if (!container) return;
 
-            const keys = getStoredKeys();
-            if (badge) badge.innerText = `${keys.length} ключей`;
+            let keys = [];
+            try {
+                const res = await fetch('/api/admin?action=list_keys');
+                const data = await res.json();
+                if (data.ok && data.keys) {
+                    keys = data.keys;
+                }
+            } catch (err) {}
 
+            if (keys.length === 0) {
+                keys = getStoredKeys();
+            }
+
+            if (badge) badge.innerText = `${keys.length} ключей`;
             container.innerHTML = '';
             if (keys.length === 0) {
                 container.innerHTML = '<div class="text-neutral-500 text-xs">Нет созданных ключей</div>';

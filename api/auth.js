@@ -1,111 +1,167 @@
-const fs = require('fs');
-const path = require('path');
+const db = require('./db');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'users.json');
-
-function loadDb() {
-  try {
-    if (fs.existsSync(DB_PATH)) {
-      return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-    }
-  } catch (e) {}
-  return {
-    users: [
-      { uid: 1, username: 'TOmoro', password: 'GENSIS2323', role: 'Admin', subscription: 'Lifetime', subExpiry: '2099-12-31', hwid: 'E4F9-98A1-440B-CC02-LUNA', createdAt: '2026-01-01' },
-      { uid: 2, username: 'admin', password: 'admin123', role: 'Admin', subscription: 'Lifetime', subExpiry: '2099-12-31', hwid: '', createdAt: '2026-01-01' }
-    ],
-    keys: []
-  };
-}
-
-function saveDb(db) {
-  try {
-    const dir = path.dirname(DB_PATH);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
-  } catch (e) {}
-}
-
-module.exports = (req, res) => {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const body = req.body || {};
-  const action = body.action || req.query.action || 'login';
-  const db = loadDb();
+  try {
+    const body = req.body || {};
+    const action = body.action || req.query.action || 'login';
 
-  if (action === 'register') {
+    // 1. REGISTER
+    if (action === 'register') {
+      const username = (body.username || '').trim();
+      const password = (body.password || '').trim();
+      const confirmPassword = (body.confirmPassword || '').trim();
+
+      if (!username || username.length < 3 || username.length > 20) {
+        return res.status(400).json({ ok: false, error: 'Логин должен содержать от 3 до 20 символов' });
+      }
+      const userRegex = /^[a-zA-Z0-9_]+$/;
+      if (!userRegex.test(username)) {
+        return res.status(400).json({ ok: false, error: 'Логин может содержать только латинские буквы, цифры и _ (без пробелов)' });
+      }
+      if (!password || password.length < 6) {
+        return res.status(400).json({ ok: false, error: 'Пароль должен содержать минимум 6 символов' });
+      }
+      if (confirmPassword && password !== confirmPassword) {
+        return res.status(400).json({ ok: false, error: 'Пароли не совпадают' });
+      }
+
+      const existing = await db.getUserByName(username);
+      if (existing) {
+        return res.status(400).json({ ok: false, error: 'Пользователь с таким никнеймом уже зарегистрирован' });
+      }
+
+      const created = await db.createUser({
+        username,
+        password,
+        role: 'User',
+        subscription: 'Не активна',
+        subExpiry: '2000-01-01',
+        hwid: ''
+      });
+
+      const safeUser = { ...created };
+      delete safeUser.password;
+      return res.status(200).json({
+        ok: true,
+        user: safeUser,
+        message: `Успешная регистрация! Присвоен реальный UID: #${created.uid}`
+      });
+    }
+
+    // 2. CHANGE PASSWORD
+    if (action === 'change_password') {
+      const uid = parseInt(body.uid, 10);
+      const oldPassword = (body.oldPassword || '').trim();
+      const newPassword = (body.newPassword || '').trim();
+      const confirmNewPassword = (body.confirmNewPassword || '').trim();
+
+      if (!uid || isNaN(uid)) {
+        return res.status(400).json({ ok: false, error: 'Не указан UID пользователя' });
+      }
+      if (!oldPassword || !newPassword) {
+        return res.status(400).json({ ok: false, error: 'Заполните текущий и новый пароль' });
+      }
+      if (newPassword.length < 6) {
+        return res.status(400).json({ ok: false, error: 'Новый пароль должен содержать от 6 символов' });
+      }
+      if (confirmNewPassword && newPassword !== confirmNewPassword) {
+        return res.status(400).json({ ok: false, error: 'Новые пароли не совпадают' });
+      }
+
+      const user = await db.getUserByUid(uid);
+      if (!user) {
+        return res.status(404).json({ ok: false, error: 'Пользователь не найден' });
+      }
+      if (user.password !== oldPassword) {
+        return res.status(401).json({ ok: false, error: 'Текущий пароль указан неверно' });
+      }
+
+      const updated = await db.updateUser(uid, { password: newPassword });
+      const safeUser = { ...updated };
+      delete safeUser.password;
+      return res.status(200).json({ ok: true, user: safeUser, message: 'Пароль успешно обновлен!' });
+    }
+
+    // 3. DELETE ACCOUNT
+    if (action === 'delete_account') {
+      const uid = parseInt(body.uid, 10);
+      const password = (body.password || '').trim();
+
+      if (!uid || isNaN(uid)) {
+        return res.status(400).json({ ok: false, error: 'Не указан UID пользователя' });
+      }
+      if (!password) {
+        return res.status(400).json({ ok: false, error: 'Для подтверждения удаления введите пароль' });
+      }
+
+      const user = await db.getUserByUid(uid);
+      if (!user) {
+        return res.status(404).json({ ok: false, error: 'Пользователь не найден' });
+      }
+      if (user.password !== password) {
+        return res.status(401).json({ ok: false, error: 'Неверный пароль' });
+      }
+
+      // Safeguard: protect root admin UID 1
+      if (uid === 1 || user.username.toLowerCase() === 'tomoro') {
+        return res.status(403).json({ ok: false, error: 'Основной аккаунт администратора не может быть удален' });
+      }
+
+      const deleted = await db.deleteUser(uid);
+      if (!deleted) {
+        return res.status(500).json({ ok: false, error: 'Не удалось удалить аккаунт' });
+      }
+
+      return res.status(200).json({ ok: true, message: 'Аккаунт успешно удален' });
+    }
+
+    // 4. GET PROFILE BY UID (Refreshes user data)
+    if (action === 'get_profile') {
+      const uid = parseInt(body.uid || req.query.uid, 10);
+      if (!uid || isNaN(uid)) {
+        return res.status(400).json({ ok: false, error: 'Не указан UID' });
+      }
+      const user = await db.getUserByUid(uid);
+      if (!user) {
+        return res.status(404).json({ ok: false, error: 'Пользователь не найден' });
+      }
+      const safeUser = { ...user };
+      delete safeUser.password;
+      return res.status(200).json({ ok: true, user: safeUser });
+    }
+
+    // 5. LOGIN
     const username = (body.username || '').trim();
     const password = (body.password || '').trim();
-    const confirmPassword = (body.confirmPassword || '').trim();
 
-    if (!username || username.length < 3 || username.length > 20) {
-      return res.status(400).json({ ok: false, error: 'Логин должен содержать от 3 до 20 символов' });
+    if (!username) {
+      return res.status(400).json({ ok: false, error: 'Введите ваш логин или никнейм' });
     }
-    const userRegex = /^[a-zA-Z0-9_]+$/;
-    if (!userRegex.test(username)) {
-      return res.status(400).json({ ok: false, error: 'Логин может содержать только латинские буквы, цифры и _ (без пробелов)' });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ ok: false, error: 'Пароль должен содержать минимум 6 символов' });
-    }
-    if (confirmPassword && password !== confirmPassword) {
-      return res.status(400).json({ ok: false, error: 'Пароли не совпадают' });
+    if (!password) {
+      return res.status(400).json({ ok: false, error: 'Введите пароль' });
     }
 
-    const exists = db.users.some(u => u.username.toLowerCase() === username.toLowerCase());
-    if (exists) {
-      return res.status(400).json({ ok: false, error: 'Пользователь с таким никнеймом уже зарегистрирован' });
+    const user = await db.getUserByName(username);
+    if (!user) {
+      return res.status(404).json({ ok: false, error: 'Пользователь с таким никнеймом не найден' });
     }
 
-    const maxUid = db.users.reduce((m, u) => Math.max(m, u.uid || 0), 0);
-    const newUid = maxUid + 1;
-    const now = new Date();
-    const expiry = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    if (user.password !== password) {
+      return res.status(401).json({ ok: false, error: 'Неверный пароль' });
+    }
 
-    const newUser = {
-      uid: newUid,
-      username: username,
-      password: password,
-      role: 'User',
-      subscription: 'Демо-период (24ч)',
-      subExpiry: expiry,
-      hwid: '',
-      createdAt: now.toISOString().split('T')[0]
-    };
-
-    db.users.push(newUser);
-    saveDb(db);
-
-    const safeUser = { ...newUser };
+    const safeUser = { ...user };
     delete safeUser.password;
-    return res.status(200).json({ ok: true, user: safeUser, message: `Успешная регистрация! Ваш UID: #${newUid}` });
-  }
+    return res.status(200).json({ ok: true, user: safeUser, message: 'Авторизация успешна' });
 
-  // Action: Login
-  const username = (body.username || '').trim();
-  const password = (body.password || '').trim();
-
-  if (!username) {
-    return res.status(400).json({ ok: false, error: 'Введите ваш логин или никнейм' });
+  } catch (err) {
+    console.error('[API/auth] Error:', err);
+    return res.status(500).json({ ok: false, error: 'Внутренняя ошибка сервера: ' + err.message });
   }
-  if (!password) {
-    return res.status(400).json({ ok: false, error: 'Введите пароль' });
-  }
-
-  const userByName = db.users.find(u => u.username.toLowerCase() === username.toLowerCase());
-  if (!userByName) {
-    return res.status(404).json({ ok: false, error: 'Пользователь с таким никнеймом не найден' });
-  }
-
-  if (userByName.password !== password) {
-    return res.status(401).json({ ok: false, error: 'Неверный пароль' });
-  }
-
-  const safeUser = { ...userByName };
-  delete safeUser.password;
-  return res.status(200).json({ ok: true, user: safeUser });
 };

@@ -80,17 +80,23 @@ async function initPostgres() {
 }
 
 const ALT_DB_PATH = path.join(__dirname, '..', 'Site', 'data', 'users.json');
+const ROOT_DB_PATH = path.join(__dirname, '..', '..', 'data', 'users.json');
+const TMP_DB_PATH = path.join(process.platform === 'win32' ? (process.env.TEMP || 'C:\\Windows\\Temp') : '/tmp', 'luna_users.json');
 
 // Local JSON file fallback (used when no cloud DB env var is provided)
 function loadLocalDb() {
-  try {
-    if (fs.existsSync(DB_PATH)) {
-      return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-    }
-    if (fs.existsSync(ALT_DB_PATH)) {
-      return JSON.parse(fs.readFileSync(ALT_DB_PATH, 'utf8'));
-    }
-  } catch (e) {}
+  const candidates = [TMP_DB_PATH, DB_PATH, ALT_DB_PATH, ROOT_DB_PATH];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+        if (data && Array.isArray(data.users) && data.users.length > 0) {
+          if (!data.keys) data.keys = [];
+          return data;
+        }
+      }
+    } catch (e) {}
+  }
   return {
     users: [
       { uid: 1, username: 'TOmoro', password: 'GENSIS2323', role: 'Admin', subscription: 'Lifetime', subExpiry: '2099-12-31', hwid: '', createdAt: '2026-01-01' },
@@ -102,7 +108,7 @@ function loadLocalDb() {
 
 function saveLocalDb(db) {
   const json = JSON.stringify(db, null, 2);
-  const targets = [DB_PATH, ALT_DB_PATH];
+  const targets = [TMP_DB_PATH, DB_PATH, ALT_DB_PATH, ROOT_DB_PATH];
   for (const t of targets) {
     try {
       const dir = path.dirname(t);

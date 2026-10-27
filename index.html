@@ -1842,7 +1842,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
 
             // 1. Try server API first (keys are stored on server/cloud DB)
             try {
-                const res = await fetch('/api/redeem', {
+                const res = await fetch(`/api/redeem?uid=${encodeURIComponent(currentUser.uid)}&key=${encodeURIComponent(keyStr)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ uid: currentUser.uid, key: keyStr })
@@ -1855,7 +1855,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                     showToast(data.message || `Ключ активирован! Ваша подписка: ${currentUser.subscription}`);
                     updateCabinetUI();
                     return;
-                } else if (data.error) {
+                } else if (data.error && !data.error.includes('Неверный лицензионный ключ')) {
                     showToast("Ошибка: " + data.error);
                     return;
                 }
@@ -2045,7 +2045,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
         async function adminGenerateKey() {
             const plan = document.getElementById('admin-key-plan').value;
             try {
-                const res = await fetch('/api/admin', {
+                const res = await fetch(`/api/admin?action=generate_key&plan=${encodeURIComponent(plan)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'generate_key', plan: plan })
@@ -2055,6 +2055,9 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                     const k = data.key;
                     addAdminLog(`Сгенерирован ключ сабки (<span class="text-neutral-400">${k.durationLabel}</span>): <strong class="text-emerald-400 cursor-pointer" onclick="copyKey('${k.key}')">${k.key}</strong> (клик для копирования)`);
                     showToast(`Сгенерирован ключ: ${k.key}`);
+                    const keys = getStoredKeys();
+                    keys.unshift(k);
+                    saveStoredKeys(keys);
                     refreshAdminKeysList();
                     return;
                 }

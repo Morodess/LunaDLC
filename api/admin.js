@@ -1,6 +1,21 @@
 const db = require('./db');
 const crypto = require('crypto');
 
+async function parseReqBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch(e) {}
+  }
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); } catch(e) { resolve({}); }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -9,8 +24,10 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const body = req.body || {};
-    const action = body.action || req.query.action;
+    const rawBody = await parseReqBody(req);
+    const query = req.query || (req.url && req.url.includes('?') ? Object.fromEntries(new URL(req.url, 'http://localhost').searchParams) : {});
+    const body = { ...query, ...rawBody };
+    const action = body.action || query.action;
 
     // 1. Reset HWID by UID
     if (action === 'reset_hwid') {

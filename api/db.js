@@ -57,6 +57,16 @@ async function initPostgres() {
           used_by_uid INTEGER,
           used_at VARCHAR(32)
         );
+
+        CREATE TABLE IF NOT EXISTS shared_configs (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(64) NOT NULL,
+          author VARCHAR(64) NOT NULL,
+          description TEXT DEFAULT '',
+          data JSONB NOT NULL,
+          downloads INTEGER DEFAULT 0,
+          created_at VARCHAR(32) NOT NULL
+        );
       `);
 
       // Check if default admin accounts exist
@@ -362,6 +372,129 @@ async function listKeys() {
   return db.keys || [];
 }
 
+const CONFIGS_DB_PATH = path.join(__dirname, '..', 'data', 'configs.json');
+
+function loadLocalConfigs() {
+  try {
+    if (fs.existsSync(CONFIGS_DB_PATH)) {
+      const data = JSON.parse(fs.readFileSync(CONFIGS_DB_PATH, 'utf8'));
+      if (Array.isArray(data)) return data;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function saveLocalConfigs(configs) {
+  try {
+    const dir = path.dirname(CONFIGS_DB_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(CONFIGS_DB_PATH, JSON.stringify(configs, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+async function listConfigs() {
+  if (pool) {
+    await initPostgres();
+    const res = await pool.query('SELECT * FROM shared_configs ORDER BY id DESC');
+    return res.rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      author: r.author,
+      description: r.description || '',
+      data: r.data,
+      downloads: r.downloads || 0,
+      createdAt: r.created_at
+    }));
+  }
+  return loadLocalConfigs();
+}
+
+async function getConfigById(id) {
+  const numId = parseInt(id, 10);
+  if (pool) {
+    await initPostgres();
+    const res = await pool.query('SELECT * FROM shared_configs WHERE id = $1', [numId]);
+    if (res.rows.length === 0) return null;
+    const r = res.rows[0];
+    return {
+      id: r.id,
+      name: r.name,
+      author: r.author,
+      description: r.description || '',
+      data: r.data,
+      downloads: r.downloads || 0,
+      createdAt: r.created_at
+    };
+  }
+  const configs = loadLocalConfigs();
+  return configs.find(c => c.id === numId) || null;
+}
+
+async function createConfig({ name, author, description, data }) {
+  const now = new Date().toISOString().split('T')[0];
+  if (pool) {
+    await initPostgres();
+    const res = await pool.query(
+      `INSERT INTO shared_configs (name, author, description, data, downloads, created_at)
+       VALUES ($1, $2, $3, $4, 0, $5) RETURNING *`,
+      [name, author || 'Player', description || '', JSON.stringify(data), now]
+    );
+    const r = res.rows[0];
+    return {
+      id: r.id,
+      name: r.name,
+      author: r.author,
+      description: r.description || '',
+      data: r.data,
+      downloads: 0,
+      createdAt: r.created_at
+    };
+  }
+  const configs = loadLocalConfigs();
+  const nextId = configs.reduce((max, c) => Math.max(max, c.id || 0), 0) + 1;
+  const newCfg = {
+    id: nextId,
+    name,
+    author: author || 'Player',
+    description: description || '',
+    data,
+    downloads: 0,
+    createdAt: now
+  };
+  configs.unshift(newCfg);
+  saveLocalConfigs(configs);
+  return newCfg;
+}
+
+async function deleteConfig(id) {
+  const numId = parseInt(id, 10);
+  if (pool) {
+    await initPostgres();
+    await pool.query('DELETE FROM shared_configs WHERE id = $1', [numId]);
+    return true;
+  }
+  let configs = loadLocalConfigs();
+  const before = configs.length;
+  configs = configs.filter(c => c.id !== numId);
+  saveLocalConfigs(configs);
+  return configs.length < before;
+}
+
+async function incrementConfigDownloads(id) {
+  const numId = parseInt(id, 10);
+  if (pool) {
+    await initPostgres();
+    await pool.query('UPDATE shared_configs SET downloads = downloads + 1 WHERE id = $1', [numId]);
+    return;
+  }
+  const configs = loadLocalConfigs();
+  const c = configs.find(item => item.id === numId);
+  if (c) {
+    c.downloads = (c.downloads || 0) + 1;
+    saveLocalConfigs(configs);
+  }
+}
+
 module.exports = {
   isPostgres: !!pool,
   getUserByName,
@@ -373,5 +506,11 @@ module.exports = {
   getKey,
   createKey,
   redeemKeyInDb,
-  listKeys
+  listKeys,
+  listConfigs,
+  getConfigById,
+  createConfig,
+  deleteConfig,
+  incrementConfigDownloads
 };
+

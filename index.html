@@ -673,27 +673,38 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
                         <span>Назад на главную</span>
                     </button>
                     <h1 class="text-3xl font-extrabold text-noirText">Облачные конфигурации</h1>
-                    <p class="text-xs text-noirTextMuted">Персональное хранилище и публичная галерея конфигов LunaClient</p>
+                    <p class="text-xs text-noirTextMuted">Официальная облачная галерея и обмен конфигурациями LunaClient</p>
                 </div>
-                <button onclick="showToast('Создание нового конфига...');" class="px-4 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-wider hover:opacity-90 transition">
-                    + Создать конфиг
-                </button>
+                <div class="flex items-center space-x-3">
+                    <button onclick="loadWebConfigs()" class="px-3.5 py-2 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-xs text-noirText font-medium transition flex items-center space-x-1.5" title="Обновить список">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Обновить</span>
+                    </button>
+                    <button onclick="openUploadConfigModal()" class="px-4 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-wider hover:opacity-90 transition flex items-center space-x-1.5">
+                        <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+                        <span>+ Выложить конфиг</span>
+                    </button>
+                </div>
             </div>
 
-            <!-- Empty State Display -->
-            <div class="bg-noirCard border border-dashed border-noirBorder rounded-3xl p-16 flex flex-col items-center justify-center text-center space-y-4 my-auto">
+            <!-- Dynamic Configs Grid Container -->
+            <div id="webconfigs-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically populated via JS -->
+            </div>
+            
+            <div id="webconfigs-empty" class="hidden bg-noirCard border border-dashed border-noirBorder rounded-3xl p-16 flex flex-col items-center justify-center text-center space-y-4 my-auto">
                 <div class="w-16 h-16 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-noirBorder flex items-center justify-center text-noirTextMuted">
                     <i data-lucide="folder-code" class="w-8 h-8"></i>
                 </div>
                 <div class="space-y-1">
                     <h3 class="text-base font-bold text-noirText">Список конфигов пуст</h3>
                     <p class="text-xs text-noirTextMuted max-w-sm">
-                        В данный момент нет сохраненных облачных конфигураций или идет синхронизация с игровым сервером.
+                        В данный момент нет опубликованных конфигураций. Будьте первыми и выложите свой конфиг из клиента или через сайт!
                     </p>
                 </div>
                 <div class="flex items-center space-x-3 pt-2">
-                    <button onclick="navigateTab('main')" class="px-4 py-2 rounded-lg border border-noirBorder text-xs text-noirText hover:border-noirBorderStrong transition">
-                        Вернуться на главную
+                    <button onclick="openUploadConfigModal()" class="px-4 py-2 rounded-lg bg-black dark:bg-white text-white dark:text-black text-xs font-semibold hover:opacity-90 transition">
+                        Выложить конфиг
                     </button>
                 </div>
             </div>
@@ -1143,6 +1154,48 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
         </div>
     </div>
 
+    <!-- UPLOAD CONFIG MODAL -->
+    <div id="upload-config-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-neutral-950 border border-noirBorder rounded-3xl w-full max-w-md p-6 sm:p-8 space-y-5 shadow-2xl relative">
+            <button onclick="closeUploadConfigModal()" class="absolute top-5 right-5 text-noirTextMuted hover:text-noirText transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            <div class="space-y-1">
+                <h3 class="text-xl font-black text-noirText flex items-center space-x-2">
+                    <i data-lucide="upload-cloud" class="w-5 h-5 text-emerald-400"></i>
+                    <span>Выложить конфигурацию</span>
+                </h3>
+                <p class="text-xs text-noirTextMuted">Опубликуйте ваш конфиг для других пользователей LunaClient</p>
+            </div>
+            <form onsubmit="handleUploadConfigSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Название конфига</label>
+                    <input id="cfg-upload-name" type="text" required placeholder="Например: Legit PvP v2" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Автор</label>
+                    <input id="cfg-upload-author" type="text" placeholder="Ваш никнейм" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong font-mono">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Описание (необязательно)</label>
+                    <input id="cfg-upload-desc" type="text" placeholder="Для каких серверов / режимов подходит" class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl px-3.5 py-2 text-xs text-noirText focus:outline-none focus:border-noirBorderStrong">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-mono text-noirTextMuted mb-1">Данные конфига (JSON)</label>
+                    <textarea id="cfg-upload-json" required rows="5" placeholder='{"accentColor": 5434288, "uiTheme": "matte_dark", ...}' class="w-full bg-neutral-100 dark:bg-neutral-900 border border-noirBorder rounded-xl p-3 text-xs text-noirText font-mono focus:outline-none focus:border-noirBorderStrong resize-none"></textarea>
+                </div>
+                <div class="flex items-center justify-end space-x-3 pt-2 border-t border-noirBorder">
+                    <button type="button" onclick="closeUploadConfigModal()" class="px-4 py-2 rounded-xl border border-noirBorder text-xs text-noirText font-medium hover:border-noirBorderStrong transition">
+                        Отмена
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-bold uppercase tracking-wider hover:opacity-90 transition">
+                        Опубликовать
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- NOTIFICATION TOAST -->
     <div id="toast" class="fixed bottom-6 right-6 z-[60] transform translate-y-28 opacity-0 transition-all duration-300 bg-white dark:bg-neutral-900 border border-noirBorder text-noirText px-4 py-3 rounded-2xl flex items-center space-x-3 shadow-2xl text-xs font-medium">
         <span class="w-2 h-2 rounded-full bg-black dark:bg-white flex-shrink-0"></span>
@@ -1317,6 +1370,7 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             if (tabName === 'webconfigs') {
                 if (cabinetPollTimer) { clearInterval(cabinetPollTimer); cabinetPollTimer = null; }
                 viewConfigs.classList.remove('hidden');
+                loadWebConfigs();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             } else if (tabName === 'cabinet') {
                 viewCabinet.classList.remove('hidden');
@@ -1331,6 +1385,169 @@ Luna.registerHook(<span class="text-neutral-400">"onPacketReceive"</span>, <span
             }
             if (window.lucide) lucide.createIcons();
         }
+
+        // --- WEB CONFIGS GALLERY HANDLERS ---
+        let currentWebConfigs = [];
+
+        async function loadWebConfigs() {
+            const grid = document.getElementById('webconfigs-grid');
+            const empty = document.getElementById('webconfigs-empty');
+            if (!grid) return;
+
+            grid.innerHTML = '<div class="col-span-full py-12 text-center text-xs text-noirTextMuted">Загрузка конфигураций...</div>';
+
+            try {
+                const res = await fetch('/api/configs');
+                const json = await res.json();
+                if (json && json.ok && Array.isArray(json.configs) && json.configs.length > 0) {
+                    currentWebConfigs = json.configs;
+                    if (empty) empty.classList.add('hidden');
+                    grid.classList.remove('hidden');
+                    renderWebConfigsGrid(json.configs);
+                } else {
+                    currentWebConfigs = [];
+                    grid.innerHTML = '';
+                    grid.classList.add('hidden');
+                    if (empty) empty.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error('[WebConfigs] Load error:', err);
+                grid.innerHTML = '<div class="col-span-full py-12 text-center text-xs text-rose-400">Ошибка загрузки конфигураций с сервера.</div>';
+            }
+        }
+
+        function renderWebConfigsGrid(configs) {
+            const grid = document.getElementById('webconfigs-grid');
+            if (!grid) return;
+
+            grid.innerHTML = configs.map(c => {
+                const isOwner = currentUser && (currentUser.username.toLowerCase() === (c.author || '').toLowerCase() || (currentUser.role || '').toLowerCase() === 'admin');
+                const desc = c.description ? c.description : 'Пользовательская конфигурация LunaClient';
+                return `
+                <div class="bg-noirCard border border-noirBorder hover:border-noirBorderStrong rounded-2xl p-5 space-y-4 transition-all flex flex-col justify-between">
+                    <div class="space-y-2">
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-base font-extrabold text-noirText truncate max-w-[200px]" title="${c.name}">${c.name}</h3>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono border border-emerald-500/20">
+                                ${c.downloads || 0} скачиваний
+                            </span>
+                        </div>
+                        <p class="text-xs text-noirTextMuted line-clamp-2">${desc}</p>
+                        <div class="flex items-center space-x-2 text-[11px] text-neutral-400 font-mono">
+                            <i data-lucide="user" class="w-3 h-3 text-neutral-500"></i>
+                            <span class="text-noirText font-medium">${c.author || 'Player'}</span>
+                            <span>•</span>
+                            <span>${c.createdAt || 'Недавно'}</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-noirBorder/50 flex items-center justify-between gap-2">
+                        <div class="flex items-center space-x-2">
+                            <button onclick="downloadWebConfig(${c.id})" class="px-3 py-1.5 rounded-xl bg-black dark:bg-white text-white dark:text-black text-xs font-semibold hover:opacity-90 transition flex items-center space-x-1.5">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>Скачать</span>
+                            </button>
+                            <button onclick="copyWebConfig(${c.id})" class="p-1.5 rounded-xl border border-noirBorder hover:border-noirBorderStrong text-noirText transition" title="Скопировать JSON">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                        ${isOwner ? `
+                        <button onclick="deleteWebConfig(${c.id})" class="p-1.5 rounded-xl border border-rose-500/30 hover:border-rose-500/60 text-rose-400 transition" title="Удалить конфиг">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function downloadWebConfig(id) {
+            const cfg = currentWebConfigs.find(c => c.id === id);
+            if (!cfg) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cfg.data, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", (cfg.name || "config").replaceAll(/[^a-zA-Z0-9_-]/g, "_") + ".json");
+            dlAnchorElem.click();
+            showToast(`Конфиг "${cfg.name}" скачан!`);
+        }
+
+        function copyWebConfig(id) {
+            const cfg = currentWebConfigs.find(c => c.id === id);
+            if (!cfg) return;
+            navigator.clipboard.writeText(JSON.stringify(cfg.data, null, 2));
+            showToast(`JSON конфига "${cfg.name}" скопирован в буфер!`);
+        }
+
+        function openUploadConfigModal() {
+            if (currentUser) {
+                const authorInput = document.getElementById('cfg-upload-author');
+                if (authorInput) authorInput.value = currentUser.username;
+            }
+            document.getElementById('upload-config-modal').classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeUploadConfigModal() {
+            document.getElementById('upload-config-modal').classList.add('hidden');
+        }
+
+        async function handleUploadConfigSubmit(event) {
+            event.preventDefault();
+            const name = document.getElementById('cfg-upload-name').value.trim();
+            const author = document.getElementById('cfg-upload-author').value.trim() || (currentUser ? currentUser.username : 'Player');
+            const description = document.getElementById('cfg-upload-desc').value.trim();
+            const jsonRaw = document.getElementById('cfg-upload-json').value.trim();
+
+            let dataObj;
+            try {
+                dataObj = JSON.parse(jsonRaw);
+            } catch (e) {
+                alert('Некорректный JSON конфига! Проверьте формат.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/configs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, author, description, data: dataObj })
+                });
+                const json = await res.json();
+                if (json && json.ok) {
+                    closeUploadConfigModal();
+                    showToast(json.message || 'Конфиг успешно опубликован!');
+                    document.getElementById('cfg-upload-name').value = '';
+                    document.getElementById('cfg-upload-desc').value = '';
+                    document.getElementById('cfg-upload-json').value = '';
+                    loadWebConfigs();
+                } else {
+                    alert('Ошибка: ' + (json.error || 'Не удалось сохранить конфиг'));
+                }
+            } catch (err) {
+                alert('Ошибка соединения: ' + err.message);
+            }
+        }
+
+        async function deleteWebConfig(id) {
+            if (!confirm('Вы уверены, что хотите удалить этот конфиг?')) return;
+            try {
+                const res = await fetch('/api/configs?id=' + id, { method: 'DELETE' });
+                const json = await res.json();
+                if (json && json.ok) {
+                    showToast('Конфиг удален');
+                    loadWebConfigs();
+                } else {
+                    alert('Ошибка: ' + (json.error || 'Не удалось удалить конфиг'));
+                }
+            } catch (err) {
+                alert('Ошибка соединения: ' + err.message);
+            }
+        }
+
 
         window.addEventListener('focus', () => {
             if (currentUser) refreshUserProfile(false);
